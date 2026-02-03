@@ -89,7 +89,7 @@ func TestPaginate(t *testing.T) {
 		}
 
 		_, err := Collect(paginate(context.Background(), nil, fetch))
-		if err != expectedErr {
+		if !errors.Is(err, expectedErr) {
 			t.Errorf("error = %v, want %v", err, expectedErr)
 		}
 	})
@@ -169,7 +169,7 @@ func TestCollect(t *testing.T) {
 		}
 
 		got, err := Collect(seq)
-		if err != expectedErr {
+		if !errors.Is(err, expectedErr) {
 			t.Errorf("error = %v, want %v", err, expectedErr)
 		}
 		if len(got) != 2 {

@@ -5,6 +5,7 @@ import "time"
 // AssessmentState represents the current state of an assessment.
 type AssessmentState string
 
+// Possible values for AssessmentState.
 const (
 	AssessmentStateWaitingForCapacity   AssessmentState = "waiting-for-capacity"
 	AssessmentStateRunning              AssessmentState = "running"
