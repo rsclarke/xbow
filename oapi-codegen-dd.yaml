@@ -1,0 +1,6 @@
+package: api
+output:
+  use-single-file: true
+  filename: xbow.gen.go
+generate:
+  client: true
