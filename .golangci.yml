@@ -1,0 +1,50 @@
+version: "2"
+linters:
+  enable:
+    - errorlint
+    - godot
+    - nilerr
+    - predeclared
+    - revive
+    - staticcheck
+    - unconvert
+    - unparam
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    revive:
+      rules:
+        - name: context-as-argument
+        - name: var-naming
+        - name: exported
+        - name: package-comments
+        - name: receiver-naming
+        - name: indent-error-flow
+    staticcheck:
+      checks:
+        - all
+        - -ST1003
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - internal/api/xbow\.gen\.go$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - internal/api/xbow\.gen\.go$
