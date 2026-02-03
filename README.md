@@ -55,6 +55,30 @@ func main() {
         }
         fmt.Printf("- %s: %s\n", assessment.Name, assessment.State)
     }
+
+    // Get an asset
+    asset, err := client.Assets.Get(ctx, "asset-id")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Asset: %s (%s)\n", asset.Name, asset.Lifecycle)
+
+    // Create a new asset
+    asset, err = client.Assets.Create(ctx, "organization-id", &xbow.CreateAssetRequest{
+        Name: "My Web App",
+        Sku:  "standard-sku",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // List all assets in an organization
+    for asset, err := range client.Assets.AllByOrganization(ctx, "organization-id", nil) {
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Printf("- %s: %s\n", asset.Name, asset.Lifecycle)
+    }
 }
 ```
 
@@ -68,10 +92,10 @@ func main() {
 |                   | Cancel                                 | ✅          |
 |                   | Pause                                  | ✅          |
 |                   | Resume                                 | ✅          |
-| **Assets**        | Get                                    |             |
-|                   | Update                                 |             |
-|                   | List / All                             |             |
-|                   | Create                                 |             |
+| **Assets**        | Get                                    | ✅          |
+|                   | Update                                 | ✅          |
+|                   | ListByOrganization / AllByOrganization | ✅          |
+|                   | Create                                 | ✅          |
 | **Findings**      | Get                                    |             |
 |                   | VerifyFix                              |             |
 |                   | ListByAsset / AllByAsset               |             |
