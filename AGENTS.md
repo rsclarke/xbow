@@ -199,6 +199,51 @@ Use `ptrValue[T]` to safely dereference optional pointer fields:
 NextCursor: ptrValue(r.NextCursor),
 ```
 
+## Unit Testing
+
+### Philosophy
+
+For thin wrappers over generated code, **only test YOUR logic**, not the plumbing. Don't mock HTTP for things that are integration test territory.
+
+### What to Test
+
+- **Conversion functions** - Call directly with constructed generated types, verify domain types
+- **Pagination iterators** - Test cursor passing, early termination, error propagation
+- **Error wrapping** - Test `wrapError()` extracts codes correctly
+- **Edge cases** - Nil parameter handling, empty cursors, optional fields
+
+### What NOT to Mock
+
+- That the generated client gets called correctly (integration test territory)
+- HTTP serialization (oapi-codegen already tests this)
+- The generated client itself
+
+### Patterns
+
+Use table-driven tests with subtests:
+
+```go
+func TestConversion(t *testing.T) {
+    t.Run("handles all fields", func(t *testing.T) {
+        resp := &api.GeneratedResponse{ID: "123", Name: "test"}
+        got := domainFromResponse(resp)
+        if got.ID != "123" { t.Errorf(...) }
+    })
+
+    t.Run("handles nil optional field", func(t *testing.T) {
+        resp := &api.GeneratedResponse{OptionalField: nil}
+        got := domainFromResponse(resp)
+        if got.OptionalField != "" { t.Errorf(...) }
+    })
+}
+```
+
+For testing `wrapError` with `ClientAPIError`, use the functional options pattern:
+
+```go
+clientErr := runtime.NewClientAPIError(innerErr, runtime.WithStatusCode(404))
+```
+
 ## Checklist for Complete Service Implementation
 
 - [ ] All endpoints from OpenAPI spec are implemented
@@ -212,3 +257,4 @@ NextCursor: ptrValue(r.NextCursor),
 - [ ] Errors wrapped with `wrapError()`
 - [ ] Service registered in `Client` struct and initialized in `NewClient`
 - [ ] Code compiles: `go build ./...`
+- [ ] Unit tests for conversion functions and edge cases
