@@ -148,6 +148,28 @@ func (s *FindingsService) AllByAsset(ctx context.Context, assetID string, opts *
 }
 ```
 
+## Strict Rules
+
+### Complete API Alignment (MANDATORY)
+
+**Domain types MUST exactly match the OpenAPI specification.** Every field in request/response bodies must be represented in domain types. Partial implementations are not acceptable.
+
+Before implementing or modifying any service:
+
+1. **Read the full OpenAPI spec** for the endpoint(s) - check ALL properties in request and response schemas
+2. **Verify domain types** have fields for EVERY property (required AND optional)
+3. **Check enum values** match exactly (e.g., `allow-attack`, `allow-auth`, `allow-visit`, `deny` - not simplified versions)
+4. **Include nested objects** with their complete structure (e.g., `checks.assetReachable.error`)
+5. **Handle union types** (oneOf/anyOf) with appropriate accessor methods for all variants
+
+Common mistakes to avoid:
+- Missing fields that exist in the API response (e.g., `Error` field in check objects)
+- Simplified enum values that don't match the spec (e.g., `allow` vs `allow-attack`)
+- Omitting optional fields - they should still be represented (as pointers or omitempty)
+- Not handling all variants in oneOf unions
+
+When reviewing existing implementations, **always cross-reference against the OpenAPI spec** to ensure completeness.
+
 ## Conventions
 
 ### Error Handling
