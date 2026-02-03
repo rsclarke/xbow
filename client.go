@@ -27,6 +27,7 @@ import (
 	"github.com/rsclarke/xbow/internal/api"
 )
 
+// API configuration constants.
 const (
 	DefaultBaseURL = "https://console.xbow.com"
 	APIVersion     = "2026-02-01"

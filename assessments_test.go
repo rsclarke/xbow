@@ -1,6 +1,8 @@
 package xbow
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -136,13 +138,13 @@ func TestAssessmentsPageFromResponse(t *testing.T) {
 func TestCreateAssessmentNilRequest(t *testing.T) {
 	client, _ := NewClient("test-key")
 
-	_, err := client.Assessments.Create(nil, "asset-123", nil)
+	_, err := client.Assessments.Create(context.TODO(), "asset-123", nil)
 	if err == nil {
 		t.Fatal("expected error for nil request")
 	}
 
-	apiErr, ok := err.(*Error)
-	if !ok {
+	var apiErr *Error
+	if !errors.As(err, &apiErr) {
 		t.Fatalf("expected *Error, got %T", err)
 	}
 	if apiErr.Code != "ERR_INVALID_REQUEST" {

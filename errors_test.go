@@ -81,7 +81,7 @@ func TestWrapError(t *testing.T) {
 
 	t.Run("non-ClientAPIError passes through", func(t *testing.T) {
 		original := errors.New("some error")
-		if got := wrapError(original); got != original {
+		if got := wrapError(original); !errors.Is(got, original) {
 			t.Errorf("wrapError() = %v, want %v", got, original)
 		}
 	})
@@ -91,8 +91,8 @@ func TestWrapError(t *testing.T) {
 		clientErr := runtime.NewClientAPIError(jsonErr, runtime.WithStatusCode(404))
 
 		got := wrapError(clientErr)
-		apiErr, ok := got.(*Error)
-		if !ok {
+		var apiErr *Error
+		if !errors.As(got, &apiErr) {
 			t.Fatalf("expected *Error, got %T", got)
 		}
 
@@ -112,8 +112,8 @@ func TestWrapError(t *testing.T) {
 		clientErr := runtime.NewClientAPIError(plainErr, runtime.WithStatusCode(404))
 
 		got := wrapError(clientErr)
-		apiErr, ok := got.(*Error)
-		if !ok {
+		var apiErr *Error
+		if !errors.As(got, &apiErr) {
 			t.Fatalf("expected *Error, got %T", got)
 		}
 
