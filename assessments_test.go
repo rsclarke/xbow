@@ -152,6 +152,70 @@ func TestCreateAssessmentNilRequest(t *testing.T) {
 	}
 }
 
+func TestAssessmentFromGetResponseLargeAttackCredits(t *testing.T) {
+	now := time.Now().Truncate(time.Second)
+
+	// Test max value from OpenAPI spec: 9007199254740991
+	largeCredits := 9007199254740991
+
+	resp := &api.GetAPIV1AssessmentsAssessmentIDResponse{
+		ID:             "assess-123",
+		Name:           "Test Assessment",
+		AssetID:        "asset-456",
+		OrganizationID: "org-789",
+		State:          api.Running,
+		Progress:       0.5,
+		AttackCredits:  largeCredits,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+
+	got := assessmentFromGetResponse(resp)
+
+	if got.AttackCredits != int64(largeCredits) {
+		t.Errorf("AttackCredits = %d, want %d", got.AttackCredits, largeCredits)
+	}
+}
+
+func TestAssessmentListItemFields(t *testing.T) {
+	now := time.Now().Truncate(time.Second)
+
+	resp := &api.GetAPIV1AssetsAssetIDAssessmentsResponse{
+		Items: api.GetAPIV1AssetsAssetIDAssessments_Response_Items{
+			{
+				ID:        "a1",
+				Name:      "Assessment 1",
+				State:     api.GetAPIV1AssetsAssetIDAssessmentsResponseItemsStateRunning,
+				Progress:  0.5,
+				CreatedAt: now,
+				UpdatedAt: now,
+			},
+		},
+	}
+
+	got := assessmentsPageFromResponse(resp)
+
+	item := got.Items[0]
+	if item.ID != "a1" {
+		t.Errorf("ID = %q, want 'a1'", item.ID)
+	}
+	if item.Name != "Assessment 1" {
+		t.Errorf("Name = %q, want 'Assessment 1'", item.Name)
+	}
+	if item.State != AssessmentStateRunning {
+		t.Errorf("State = %q, want %q", item.State, AssessmentStateRunning)
+	}
+	if item.Progress != 0.5 {
+		t.Errorf("Progress = %f, want 0.5", item.Progress)
+	}
+	if !item.CreatedAt.Equal(now) {
+		t.Errorf("CreatedAt = %v, want %v", item.CreatedAt, now)
+	}
+	if !item.UpdatedAt.Equal(now) {
+		t.Errorf("UpdatedAt = %v, want %v", item.UpdatedAt, now)
+	}
+}
+
 func TestPtrValue(t *testing.T) {
 	t.Run("returns value when not nil", func(t *testing.T) {
 		s := "hello"

@@ -163,10 +163,20 @@ type Assessment struct {
 	OrganizationID string            `json:"organizationId"`
 	State          AssessmentState   `json:"state"`
 	Progress       float64           `json:"progress"`
-	AttackCredits  int               `json:"attackCredits"`
+	AttackCredits  int64             `json:"attackCredits"`
 	RecentEvents   []AssessmentEvent `json:"recentEvents"`
 	CreatedAt      time.Time         `json:"createdAt"`
 	UpdatedAt      time.Time         `json:"updatedAt"`
+}
+
+// AssessmentListItem represents an assessment in list responses (fewer fields).
+type AssessmentListItem struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	State     AssessmentState `json:"state"`
+	Progress  float64         `json:"progress"`
+	CreatedAt time.Time       `json:"createdAt"`
+	UpdatedAt time.Time       `json:"updatedAt"`
 }
 
 // AssessmentEvent represents an event in an assessment's history.
