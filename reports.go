@@ -18,6 +18,10 @@ type ReportsService struct {
 // Get downloads a report as PDF bytes by ID.
 // The returned bytes are the raw PDF file content.
 func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
+	if s.client.orgKey == "" {
+		return nil, &Error{Code: "ERR_MISSING_ORG_KEY", Message: "organization key is required; provide xbow.WithOrganizationKey(...)"}
+	}
+
 	url := fmt.Sprintf("%s/api/v1/reports/%s", s.client.baseURL, id)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -25,7 +29,7 @@ func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.client.apiKey)
+	req.Header.Set("Authorization", "Bearer "+s.client.orgKey)
 	req.Header.Set("X-XBOW-API-Version", APIVersion)
 
 	resp, err := s.client.httpClient.Do(req)
@@ -51,6 +55,11 @@ func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
 
 // GetSummary retrieves the markdown summary of a report by ID.
 func (s *ReportsService) GetSummary(ctx context.Context, id string) (*ReportSummary, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.GetAPIV1ReportsReportIDSummaryRequestOptions{
 		PathParams: &api.GetAPIV1ReportsReportIDSummaryPath{
 			ReportID: id,
@@ -60,7 +69,7 @@ func (s *ReportsService) GetSummary(ctx context.Context, id string) (*ReportSumm
 		},
 	}
 
-	resp, err := s.client.raw.GetAPIV1ReportsReportIDSummary(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1ReportsReportIDSummary(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -70,6 +79,11 @@ func (s *ReportsService) GetSummary(ctx context.Context, id string) (*ReportSumm
 
 // ListByAsset returns a page of reports for an asset.
 func (s *ReportsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[ReportListItem], error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	reqOpts := &api.GetAPIV1AssetsAssetIDReportsRequestOptions{
 		PathParams: &api.GetAPIV1AssetsAssetIDReportsPath{
 			AssetID: assetID,
@@ -89,7 +103,7 @@ func (s *ReportsService) ListByAsset(ctx context.Context, assetID string, opts *
 		}
 	}
 
-	resp, err := s.client.raw.GetAPIV1AssetsAssetIDReports(ctx, reqOpts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1AssetsAssetIDReports(ctx, reqOpts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}

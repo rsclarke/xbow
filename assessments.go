@@ -14,6 +14,11 @@ type AssessmentsService struct {
 
 // Get retrieves an assessment by ID.
 func (s *AssessmentsService) Get(ctx context.Context, id string) (*Assessment, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.GetAPIV1AssessmentsAssessmentIDRequestOptions{
 		PathParams: &api.GetAPIV1AssessmentsAssessmentIDPath{
 			AssessmentID: id,
@@ -23,7 +28,7 @@ func (s *AssessmentsService) Get(ctx context.Context, id string) (*Assessment, e
 		},
 	}
 
-	resp, err := s.client.raw.GetAPIV1AssessmentsAssessmentID(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1AssessmentsAssessmentID(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -43,6 +48,11 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateAssessmentRequest cannot be nil"}
 	}
 
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1AssetsAssetIDAssessmentsRequestOptions{
 		PathParams: &api.PostAPIV1AssetsAssetIDAssessmentsPath{
 			AssetID: assetID,
@@ -56,7 +66,7 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1AssetsAssetIDAssessments(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1AssetsAssetIDAssessments(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -66,6 +76,11 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 
 // ListByAsset returns a page of assessments for an asset.
 func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[AssessmentListItem], error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	reqOpts := &api.GetAPIV1AssetsAssetIDAssessmentsRequestOptions{
 		PathParams: &api.GetAPIV1AssetsAssetIDAssessmentsPath{
 			AssetID: assetID,
@@ -85,7 +100,7 @@ func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, op
 		}
 	}
 
-	resp, err := s.client.raw.GetAPIV1AssetsAssetIDAssessments(ctx, reqOpts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1AssetsAssetIDAssessments(ctx, reqOpts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -110,6 +125,11 @@ func (s *AssessmentsService) AllByAsset(ctx context.Context, assetID string, opt
 
 // Cancel cancels a running assessment.
 func (s *AssessmentsService) Cancel(ctx context.Context, id string) (*Assessment, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1AssessmentsAssessmentIDCancelRequestOptions{
 		PathParams: &api.PostAPIV1AssessmentsAssessmentIDCancelPath{
 			AssessmentID: id,
@@ -119,7 +139,7 @@ func (s *AssessmentsService) Cancel(ctx context.Context, id string) (*Assessment
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDCancel(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDCancel(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -129,6 +149,11 @@ func (s *AssessmentsService) Cancel(ctx context.Context, id string) (*Assessment
 
 // Pause pauses a running assessment.
 func (s *AssessmentsService) Pause(ctx context.Context, id string) (*Assessment, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1AssessmentsAssessmentIDPauseRequestOptions{
 		PathParams: &api.PostAPIV1AssessmentsAssessmentIDPausePath{
 			AssessmentID: id,
@@ -138,7 +163,7 @@ func (s *AssessmentsService) Pause(ctx context.Context, id string) (*Assessment,
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDPause(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDPause(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -148,6 +173,11 @@ func (s *AssessmentsService) Pause(ctx context.Context, id string) (*Assessment,
 
 // Resume resumes a paused assessment.
 func (s *AssessmentsService) Resume(ctx context.Context, id string) (*Assessment, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1AssessmentsAssessmentIDResumeRequestOptions{
 		PathParams: &api.PostAPIV1AssessmentsAssessmentIDResumePath{
 			AssessmentID: id,
@@ -157,7 +187,7 @@ func (s *AssessmentsService) Resume(ctx context.Context, id string) (*Assessment
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDResume(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1AssessmentsAssessmentIDResume(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}

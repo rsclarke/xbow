@@ -691,7 +691,7 @@ func TestConvertHTTPBoundaryRulesToBody(t *testing.T) {
 }
 
 func TestUpdateAssetNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Assets.Update(context.TODO(), "asset-123", nil)
 	if err == nil {
@@ -708,7 +708,7 @@ func TestUpdateAssetNilRequest(t *testing.T) {
 }
 
 func TestCreateAssetNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Assets.Create(context.TODO(), "org-123", nil)
 	if err == nil {

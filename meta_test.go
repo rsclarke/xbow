@@ -61,7 +61,7 @@ func TestWebhookSigningKeysFromResponse(t *testing.T) {
 }
 
 func TestMetaServiceInitialized(t *testing.T) {
-	client, err := NewClient("test-key")
+	client, err := NewClient(WithOrganizationKey("test-key"))
 	if err != nil {
 		t.Fatalf("NewClient failed: %v", err)
 	}

@@ -14,6 +14,11 @@ type FindingsService struct {
 
 // Get retrieves a finding by ID.
 func (s *FindingsService) Get(ctx context.Context, id string) (*Finding, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.GetAPIV1FindingsFindingIDRequestOptions{
 		PathParams: &api.GetAPIV1FindingsFindingIDPath{
 			FindingID: id,
@@ -23,7 +28,7 @@ func (s *FindingsService) Get(ctx context.Context, id string) (*Finding, error) 
 		},
 	}
 
-	resp, err := s.client.raw.GetAPIV1FindingsFindingID(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1FindingsFindingID(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -33,6 +38,11 @@ func (s *FindingsService) Get(ctx context.Context, id string) (*Finding, error) 
 
 // ListByAsset returns a page of findings for an asset.
 func (s *FindingsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[FindingListItem], error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	reqOpts := &api.GetAPIV1AssetsAssetIDFindingsRequestOptions{
 		PathParams: &api.GetAPIV1AssetsAssetIDFindingsPath{
 			AssetID: assetID,
@@ -52,7 +62,7 @@ func (s *FindingsService) ListByAsset(ctx context.Context, assetID string, opts 
 		}
 	}
 
-	resp, err := s.client.raw.GetAPIV1AssetsAssetIDFindings(ctx, reqOpts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1AssetsAssetIDFindings(ctx, reqOpts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -79,6 +89,11 @@ func (s *FindingsService) AllByAsset(ctx context.Context, assetID string, opts *
 // This triggers a targeted assessment to verify the vulnerability has been mitigated.
 // Returns the assessment created for the verification.
 func (s *FindingsService) VerifyFix(ctx context.Context, id string) (*Assessment, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1FindingsFindingIDVerifyFixRequestOptions{
 		PathParams: &api.PostAPIV1FindingsFindingIDVerifyFixPath{
 			FindingID: id,
@@ -88,7 +103,7 @@ func (s *FindingsService) VerifyFix(ctx context.Context, id string) (*Assessment
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1FindingsFindingIDVerifyFix(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1FindingsFindingIDVerifyFix(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}

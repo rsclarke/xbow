@@ -26,7 +26,8 @@ import (
 )
 
 func main() {
-    client, err := xbow.NewClient("your-api-key")
+    // Most endpoints use an organization key
+    client, err := xbow.NewClient(xbow.WithOrganizationKey("your-org-key"))
     if err != nil {
         log.Fatal(err)
     }
@@ -118,14 +119,41 @@ func main() {
 |                   | Create                                 |             |
 |                   | ListDeliveries / AllDeliveries         |             |
 
+## Authentication
+
+The XBOW API uses two types of API keys:
+
+- **Organization key** - Used for most endpoints (assessments, assets, findings, etc.)
+- **Integration key** - Required for organization management endpoints
+
+```go
+// Most users - organization key only
+client, _ := xbow.NewClient(xbow.WithOrganizationKey("your-org-key"))
+
+// Integration key only (for organization management)
+client, _ := xbow.NewClient(xbow.WithIntegrationKey("your-integration-key"))
+
+// Both keys for full access
+client, _ := xbow.NewClient(
+    xbow.WithOrganizationKey("your-org-key"),
+    xbow.WithIntegrationKey("your-integration-key"),
+)
+```
+
 ## Configuration
 
 ```go
 // Custom base URL
-client, _ := xbow.NewClient(apiKey, xbow.WithBaseURL("https://custom.xbow.com"))
+client, _ := xbow.NewClient(
+    xbow.WithOrganizationKey("your-org-key"),
+    xbow.WithBaseURL("https://custom.xbow.com"),
+)
 
 // Custom HTTP client
-client, _ := xbow.NewClient(apiKey, xbow.WithHTTPClient(myHTTPClient))
+client, _ := xbow.NewClient(
+    xbow.WithOrganizationKey("your-org-key"),
+    xbow.WithHTTPClient(myHTTPClient),
+)
 ```
 
 ## Pagination

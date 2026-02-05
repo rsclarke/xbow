@@ -136,7 +136,7 @@ func TestAssessmentsPageFromResponse(t *testing.T) {
 }
 
 func TestCreateAssessmentNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Assessments.Create(context.TODO(), "asset-123", nil)
 	if err == nil {

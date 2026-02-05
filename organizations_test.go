@@ -262,7 +262,7 @@ func TestAPIKeyFromResponse(t *testing.T) {
 }
 
 func TestUpdateOrganizationNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Organizations.Update(context.TODO(), "org-123", nil)
 	if err == nil {
@@ -279,7 +279,7 @@ func TestUpdateOrganizationNilRequest(t *testing.T) {
 }
 
 func TestCreateOrganizationNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Organizations.Create(context.TODO(), "integration-123", nil)
 	if err == nil {
@@ -296,7 +296,7 @@ func TestCreateOrganizationNilRequest(t *testing.T) {
 }
 
 func TestCreateOrganizationNoMembers(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Organizations.Create(context.TODO(), "integration-123", &CreateOrganizationRequest{
 		Name:    "Test Org",
@@ -319,7 +319,7 @@ func TestCreateOrganizationNoMembers(t *testing.T) {
 }
 
 func TestCreateKeyNilRequest(t *testing.T) {
-	client, _ := NewClient("test-key")
+	client, _ := NewClient(WithOrganizationKey("test-key"))
 
 	_, err := client.Organizations.CreateKey(context.TODO(), "org-123", nil)
 	if err == nil {
