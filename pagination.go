@@ -13,7 +13,7 @@ type ListOptions struct {
 
 // PageInfo contains pagination metadata.
 type PageInfo struct {
-	NextCursor string
+	NextCursor *string
 	HasMore    bool
 }
 
@@ -62,7 +62,9 @@ func paginate[T any](ctx context.Context, opts *ListOptions, fetch listFunc[T]) 
 				return
 			}
 
-			cursor = page.PageInfo.NextCursor
+			if page.PageInfo.NextCursor != nil {
+				cursor = *page.PageInfo.NextCursor
+			}
 		}
 	}
 }

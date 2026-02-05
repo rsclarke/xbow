@@ -6,11 +6,13 @@ import (
 	"testing"
 )
 
+func ptr(s string) *string { return &s }
+
 func TestPaginate(t *testing.T) {
 	t.Run("iterates through multiple pages", func(t *testing.T) {
 		pages := []*Page[string]{
-			{Items: []string{"a", "b"}, PageInfo: PageInfo{NextCursor: "cursor1", HasMore: true}},
-			{Items: []string{"c", "d"}, PageInfo: PageInfo{NextCursor: "cursor2", HasMore: true}},
+			{Items: []string{"a", "b"}, PageInfo: PageInfo{NextCursor: ptr("cursor1"), HasMore: true}},
+			{Items: []string{"c", "d"}, PageInfo: PageInfo{NextCursor: ptr("cursor2"), HasMore: true}},
 			{Items: []string{"e"}, PageInfo: PageInfo{HasMore: false}},
 		}
 		callCount := 0
@@ -64,7 +66,7 @@ func TestPaginate(t *testing.T) {
 			cursors = append(cursors, opts.After)
 			callCount++
 			if callCount == 1 {
-				return &Page[string]{Items: []string{"a"}, PageInfo: PageInfo{NextCursor: "next", HasMore: true}}, nil
+				return &Page[string]{Items: []string{"a"}, PageInfo: PageInfo{NextCursor: ptr("next"), HasMore: true}}, nil
 			}
 			return &Page[string]{Items: []string{"b"}, PageInfo: PageInfo{HasMore: false}}, nil
 		}
@@ -100,7 +102,7 @@ func TestPaginate(t *testing.T) {
 			callCount++
 			return &Page[string]{
 				Items:    []string{"a", "b", "c"},
-				PageInfo: PageInfo{NextCursor: "next", HasMore: true},
+				PageInfo: PageInfo{NextCursor: ptr("next"), HasMore: true},
 			}, nil
 		}
 

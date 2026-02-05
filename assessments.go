@@ -258,7 +258,7 @@ func assessmentsPageFromResponse(r *api.GetAPIV1AssetsAssetIDAssessmentsResponse
 	return &Page[Assessment]{
 		Items: items,
 		PageInfo: PageInfo{
-			NextCursor: ptrValue(r.NextCursor),
+			NextCursor: r.NextCursor,
 			HasMore:    r.NextCursor != nil && *r.NextCursor != "",
 		},
 	}
