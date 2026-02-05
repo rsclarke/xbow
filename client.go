@@ -59,6 +59,7 @@ type Client struct {
 	Meta          *MetaService
 	Organizations *OrganizationsService
 	Reports       *ReportsService
+	Webhooks      *WebhooksService
 }
 
 // ClientOption is a functional option for configuring the Client.
@@ -147,6 +148,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	c.Meta = &MetaService{client: c}
 	c.Organizations = &OrganizationsService{client: c}
 	c.Reports = &ReportsService{client: c}
+	c.Webhooks = &WebhooksService{client: c}
 
 	return c, nil
 }
