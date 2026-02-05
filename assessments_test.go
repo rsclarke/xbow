@@ -96,8 +96,8 @@ func TestAssessmentsPageFromResponse(t *testing.T) {
 		if got.Items[1].State != AssessmentStatePaused {
 			t.Errorf("Items[1].State = %q, want %q", got.Items[1].State, AssessmentStatePaused)
 		}
-		if got.PageInfo.NextCursor != "cursor-abc" {
-			t.Errorf("NextCursor = %q, want 'cursor-abc'", got.PageInfo.NextCursor)
+		if got.PageInfo.NextCursor == nil || *got.PageInfo.NextCursor != "cursor-abc" {
+			t.Errorf("NextCursor = %v, want 'cursor-abc'", got.PageInfo.NextCursor)
 		}
 		if !got.PageInfo.HasMore {
 			t.Error("HasMore = false, want true")
@@ -112,8 +112,8 @@ func TestAssessmentsPageFromResponse(t *testing.T) {
 
 		got := assessmentsPageFromResponse(resp)
 
-		if got.PageInfo.NextCursor != "" {
-			t.Errorf("NextCursor = %q, want empty", got.PageInfo.NextCursor)
+		if got.PageInfo.NextCursor != nil {
+			t.Errorf("NextCursor = %v, want nil", got.PageInfo.NextCursor)
 		}
 		if got.PageInfo.HasMore {
 			t.Error("HasMore = true, want false")

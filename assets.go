@@ -799,7 +799,7 @@ func assetsPageFromResponse(r *api.GetAPIV1OrganizationsOrganizationIDAssetsResp
 	return &Page[AssetListItem]{
 		Items: items,
 		PageInfo: PageInfo{
-			NextCursor: ptrValue(r.NextCursor),
+			NextCursor: r.NextCursor,
 			HasMore:    r.NextCursor != nil && *r.NextCursor != "",
 		},
 	}
