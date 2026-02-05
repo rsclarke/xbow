@@ -33,7 +33,7 @@ func (s *AssessmentsService) Get(ctx context.Context, id string) (*Assessment, e
 
 // CreateAssessmentRequest specifies the parameters for creating an assessment.
 type CreateAssessmentRequest struct {
-	AttackCredits int
+	AttackCredits int64
 	Objective     *string
 }
 
@@ -51,7 +51,7 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 			XXBOWAPIVersion: api.PostAPIV1AssetsAssetIDAssessmentsHeaderXXBOWAPIVersionN20260201,
 		},
 		Body: &api.PostAPIV1AssetsAssetIDAssessmentsBody{
-			AttackCredits: req.AttackCredits,
+			AttackCredits: int(req.AttackCredits),
 			Objective:     req.Objective,
 		},
 	}
@@ -65,7 +65,7 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 }
 
 // ListByAsset returns a page of assessments for an asset.
-func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[Assessment], error) {
+func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[AssessmentListItem], error) {
 	reqOpts := &api.GetAPIV1AssetsAssetIDAssessmentsRequestOptions{
 		PathParams: &api.GetAPIV1AssetsAssetIDAssessmentsPath{
 			AssetID: assetID,
@@ -102,8 +102,8 @@ func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, op
 //	    }
 //	    fmt.Println(assessment.Name)
 //	}
-func (s *AssessmentsService) AllByAsset(ctx context.Context, assetID string, opts *ListOptions) iter.Seq2[Assessment, error] {
-	return paginate(ctx, opts, func(ctx context.Context, pageOpts *ListOptions) (*Page[Assessment], error) {
+func (s *AssessmentsService) AllByAsset(ctx context.Context, assetID string, opts *ListOptions) iter.Seq2[AssessmentListItem, error] {
+	return paginate(ctx, opts, func(ctx context.Context, pageOpts *ListOptions) (*Page[AssessmentListItem], error) {
 		return s.ListByAsset(ctx, assetID, pageOpts)
 	})
 }
@@ -175,7 +175,7 @@ func assessmentFromGetResponse(r *api.GetAPIV1AssessmentsAssessmentIDResponse) *
 		OrganizationID: r.OrganizationID,
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
-		AttackCredits:  r.AttackCredits,
+		AttackCredits:  int64(r.AttackCredits),
 		RecentEvents:   convertRecentEventsFromGet(r.RecentEvents),
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
@@ -190,7 +190,7 @@ func assessmentFromCreateResponse(r *api.PostAPIV1AssetsAssetIDAssessmentsRespon
 		OrganizationID: r.OrganizationID,
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
-		AttackCredits:  r.AttackCredits,
+		AttackCredits:  int64(r.AttackCredits),
 		RecentEvents:   convertRecentEventsFromCreate(r.RecentEvents),
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
@@ -205,7 +205,7 @@ func assessmentFromCancelResponse(r *api.PostAPIV1AssessmentsAssessmentIDCancelR
 		OrganizationID: r.OrganizationID,
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
-		AttackCredits:  r.AttackCredits,
+		AttackCredits:  int64(r.AttackCredits),
 		RecentEvents:   convertRecentEventsFromCancel(r.RecentEvents),
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
@@ -220,7 +220,7 @@ func assessmentFromPauseResponse(r *api.PostAPIV1AssessmentsAssessmentIDPauseRes
 		OrganizationID: r.OrganizationID,
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
-		AttackCredits:  r.AttackCredits,
+		AttackCredits:  int64(r.AttackCredits),
 		RecentEvents:   convertRecentEventsFromPause(r.RecentEvents),
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
@@ -235,17 +235,17 @@ func assessmentFromResumeResponse(r *api.PostAPIV1AssessmentsAssessmentIDResumeR
 		OrganizationID: r.OrganizationID,
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
-		AttackCredits:  r.AttackCredits,
+		AttackCredits:  int64(r.AttackCredits),
 		RecentEvents:   convertRecentEventsFromResume(r.RecentEvents),
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
 	}
 }
 
-func assessmentsPageFromResponse(r *api.GetAPIV1AssetsAssetIDAssessmentsResponse) *Page[Assessment] {
-	items := make([]Assessment, 0, len(r.Items))
+func assessmentsPageFromResponse(r *api.GetAPIV1AssetsAssetIDAssessmentsResponse) *Page[AssessmentListItem] {
+	items := make([]AssessmentListItem, 0, len(r.Items))
 	for _, item := range r.Items {
-		items = append(items, Assessment{
+		items = append(items, AssessmentListItem{
 			ID:        item.ID,
 			Name:      item.Name,
 			State:     AssessmentState(item.State),
@@ -255,7 +255,7 @@ func assessmentsPageFromResponse(r *api.GetAPIV1AssetsAssetIDAssessmentsResponse
 		})
 	}
 
-	return &Page[Assessment]{
+	return &Page[AssessmentListItem]{
 		Items: items,
 		PageInfo: PageInfo{
 			NextCursor: r.NextCursor,
