@@ -96,9 +96,9 @@ func main() {
 |                   | Update                                 | ✅          |
 |                   | ListByOrganization / AllByOrganization | ✅          |
 |                   | Create                                 | ✅          |
-| **Findings**      | Get                                    |             |
-|                   | VerifyFix                              |             |
-|                   | ListByAsset / AllByAsset               |             |
+| **Findings**      | Get                                    | ✅          |
+|                   | VerifyFix                              | ✅          |
+|                   | ListByAsset / AllByAsset               | ✅          |
 | **Meta**          | GetOpenAPISpec                         |             |
 |                   | GetWebhookSigningKeys                  |             |
 | **Organizations** | Get                                    |             |

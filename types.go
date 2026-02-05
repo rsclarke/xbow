@@ -185,3 +185,52 @@ type AssessmentEvent struct {
 	Timestamp time.Time `json:"timestamp"`
 	Reason    string    `json:"reason,omitempty"`
 }
+
+// FindingSeverity represents the severity level of a finding.
+type FindingSeverity string
+
+// Possible values for FindingSeverity.
+const (
+	FindingSeverityCritical      FindingSeverity = "critical"
+	FindingSeverityHigh          FindingSeverity = "high"
+	FindingSeverityMedium        FindingSeverity = "medium"
+	FindingSeverityLow           FindingSeverity = "low"
+	FindingSeverityInformational FindingSeverity = "informational"
+)
+
+// FindingState represents the current state of a finding.
+type FindingState string
+
+// Possible values for FindingState.
+const (
+	FindingStateOpen       FindingState = "open"
+	FindingStateChallenged FindingState = "challenged"
+	FindingStateConfirmed  FindingState = "confirmed"
+	FindingStateInvalid    FindingState = "invalid"
+	FindingStateFixed      FindingState = "fixed"
+)
+
+// Finding represents a security finding with full details.
+type Finding struct {
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Severity    FindingSeverity `json:"severity"`
+	State       FindingState    `json:"state"`
+	Summary     string          `json:"summary"`
+	Impact      string          `json:"impact"`
+	Mitigations string          `json:"mitigations"`
+	Recipe      string          `json:"recipe"`
+	Evidence    string          `json:"evidence"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
+}
+
+// FindingListItem represents a finding in list responses (fewer fields).
+type FindingListItem struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Severity  FindingSeverity `json:"severity"`
+	State     FindingState    `json:"state"`
+	CreatedAt time.Time       `json:"createdAt"`
+	UpdatedAt time.Time       `json:"updatedAt"`
+}
