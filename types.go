@@ -234,3 +234,48 @@ type FindingListItem struct {
 	CreatedAt time.Time       `json:"createdAt"`
 	UpdatedAt time.Time       `json:"updatedAt"`
 }
+
+// OrganizationState represents the state of an organization.
+type OrganizationState string
+
+// Possible values for OrganizationState.
+const (
+	OrganizationStateActive   OrganizationState = "active"
+	OrganizationStateDisabled OrganizationState = "disabled"
+)
+
+// Organization represents an organization in the XBOW platform.
+type Organization struct {
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	ExternalID *string           `json:"externalId"`
+	State      OrganizationState `json:"state"`
+	CreatedAt  time.Time         `json:"createdAt"`
+	UpdatedAt  time.Time         `json:"updatedAt"`
+}
+
+// OrganizationListItem represents an organization in list responses.
+type OrganizationListItem struct {
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	ExternalID *string           `json:"externalId"`
+	State      OrganizationState `json:"state"`
+	CreatedAt  time.Time         `json:"createdAt"`
+	UpdatedAt  time.Time         `json:"updatedAt"`
+}
+
+// OrganizationMember represents a member of an organization.
+type OrganizationMember struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+// OrganizationAPIKey represents an API key for an organization.
+type OrganizationAPIKey struct {
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Key       string     `json:"key"`
+	ExpiresAt *time.Time `json:"expiresAt"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+}
