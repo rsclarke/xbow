@@ -111,13 +111,13 @@ func main() {
 | **Reports**       | Get                                    | ✅          |
 |                   | GetSummary                             | ✅          |
 |                   | ListByAsset / AllByAsset               | ✅          |
-| **Webhooks**      | Get                                    |             |
-|                   | Update                                 |             |
-|                   | Delete                                 |             |
-|                   | Ping                                   |             |
-|                   | ListByOrganization / AllByOrganization |             |
-|                   | Create                                 |             |
-|                   | ListDeliveries / AllDeliveries         |             |
+| **Webhooks**      | Get                                    | ✅          |
+|                   | Update                                 | ✅          |
+|                   | Delete                                 | ✅          |
+|                   | Ping                                   | ✅          |
+|                   | ListByOrganization / AllByOrganization | ✅          |
+|                   | Create                                 | ✅          |
+|                   | ListDeliveries / AllDeliveries         | ✅          |
 
 ## Authentication
 

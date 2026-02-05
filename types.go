@@ -291,3 +291,70 @@ type ReportListItem struct {
 type ReportSummary struct {
 	Markdown string `json:"markdown"`
 }
+
+// WebhookAPIVersion represents the API version for webhook payloads.
+type WebhookAPIVersion string
+
+// Possible values for WebhookAPIVersion.
+const (
+	WebhookAPIVersionN20251101 WebhookAPIVersion = "2025-11-01"
+	WebhookAPIVersionN20260201 WebhookAPIVersion = "2026-02-01"
+	WebhookAPIVersionNext      WebhookAPIVersion = "next"
+	WebhookAPIVersionUnstable  WebhookAPIVersion = "unstable"
+)
+
+// WebhookEventType represents the type of webhook event.
+type WebhookEventType string
+
+// Possible values for WebhookEventType.
+const (
+	WebhookEventTypePing              WebhookEventType = "ping"
+	WebhookEventTypeTargetChanged     WebhookEventType = "target.changed"
+	WebhookEventTypeAssetChanged      WebhookEventType = "asset.changed"
+	WebhookEventTypeAssessmentChanged WebhookEventType = "assessment.changed"
+	WebhookEventTypeFindingChanged    WebhookEventType = "finding.changed"
+	WebhookEventTypeChallengeChanged  WebhookEventType = "challenge.changed"
+	WebhookEventTypeAll               WebhookEventType = "*"
+)
+
+// Webhook represents a webhook subscription.
+type Webhook struct {
+	ID         string             `json:"id"`
+	APIVersion WebhookAPIVersion  `json:"apiVersion"`
+	TargetURL  string             `json:"targetUrl"`
+	Events     []WebhookEventType `json:"events"`
+	CreatedAt  time.Time          `json:"createdAt"`
+	UpdatedAt  time.Time          `json:"updatedAt"`
+}
+
+// WebhookListItem represents a webhook in list responses.
+type WebhookListItem struct {
+	ID         string             `json:"id"`
+	APIVersion WebhookAPIVersion  `json:"apiVersion"`
+	TargetURL  string             `json:"targetUrl"`
+	Events     []WebhookEventType `json:"events"`
+	CreatedAt  time.Time          `json:"createdAt"`
+	UpdatedAt  time.Time          `json:"updatedAt"`
+}
+
+// WebhookDelivery represents a webhook delivery attempt.
+type WebhookDelivery struct {
+	Payload  any                     `json:"payload"`
+	Request  WebhookDeliveryRequest  `json:"request"`
+	Response WebhookDeliveryResponse `json:"response"`
+	SentAt   time.Time               `json:"sentAt"`
+	Success  bool                    `json:"success"`
+}
+
+// WebhookDeliveryRequest represents the request made during a webhook delivery.
+type WebhookDeliveryRequest struct {
+	Body    string            `json:"body"`
+	Headers map[string]string `json:"headers"`
+}
+
+// WebhookDeliveryResponse represents the response received during a webhook delivery.
+type WebhookDeliveryResponse struct {
+	Body    string            `json:"body"`
+	Headers map[string]string `json:"headers"`
+	Status  int               `json:"status"`
+}
