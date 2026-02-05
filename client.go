@@ -35,13 +35,16 @@ const (
 
 // Client manages communication with the XBOW API.
 type Client struct {
-	raw    *api.Client
-	apiKey string
+	raw        *api.Client
+	apiKey     string
+	baseURL    string
+	httpClient *http.Client
 
 	// Services
 	Assessments *AssessmentsService
 	Assets      *AssetsService
 	Findings    *FindingsService
+	Meta        *MetaService
 }
 
 // ClientOption is a functional option for configuring the Client.
@@ -49,6 +52,7 @@ type ClientOption func(*clientConfig)
 
 type clientConfig struct {
 	baseURL       string
+	httpClient    *http.Client
 	apiClientOpts []runtime.APIClientOption
 }
 
@@ -59,10 +63,20 @@ func WithBaseURL(baseURL string) ClientOption {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client that implements runtime.HttpRequestDoer.
-func WithHTTPClient(httpClient runtime.HttpRequestDoer) ClientOption {
+// httpClientWrapper adapts an *http.Client to the runtime.HttpRequestDoer interface.
+type httpClientWrapper struct {
+	client *http.Client
+}
+
+func (w *httpClientWrapper) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	return w.client.Do(req.WithContext(ctx))
+}
+
+// WithHTTPClient sets a custom HTTP client.
+func WithHTTPClient(httpClient *http.Client) ClientOption {
 	return func(c *clientConfig) {
-		c.apiClientOpts = append(c.apiClientOpts, runtime.WithHTTPClient(httpClient))
+		c.httpClient = httpClient
+		c.apiClientOpts = append(c.apiClientOpts, runtime.WithHTTPClient(&httpClientWrapper{client: httpClient}))
 	}
 }
 
@@ -76,7 +90,8 @@ func WithAPIClientOption(opt runtime.APIClientOption) ClientOption {
 // NewClient creates a new XBOW API client with the given API key.
 func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	cfg := &clientConfig{
-		baseURL: DefaultBaseURL,
+		baseURL:    DefaultBaseURL,
+		httpClient: http.DefaultClient,
 	}
 
 	for _, opt := range opts {
@@ -89,13 +104,16 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	}
 
 	c := &Client{
-		raw:    raw,
-		apiKey: apiKey,
+		raw:        raw,
+		apiKey:     apiKey,
+		baseURL:    cfg.baseURL,
+		httpClient: cfg.httpClient,
 	}
 
 	c.Assessments = &AssessmentsService{client: c}
 	c.Assets = &AssetsService{client: c}
 	c.Findings = &FindingsService{client: c}
+	c.Meta = &MetaService{client: c}
 
 	return c, nil
 }
