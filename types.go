@@ -279,3 +279,15 @@ type OrganizationAPIKey struct {
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
+
+// ReportListItem represents a report in list responses.
+type ReportListItem struct {
+	ID        string    `json:"id"`
+	Version   int64     `json:"version"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// ReportSummary represents the summary of a report.
+type ReportSummary struct {
+	Markdown string `json:"markdown"`
+}

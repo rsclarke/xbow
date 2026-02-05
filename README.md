@@ -107,9 +107,9 @@ func main() {
 |                   | Create                                 | ✅          |
 |                   | CreateKey                              | ✅          |
 |                   | RevokeKey                              | ✅          |
-| **Reports**       | Get                                    |             |
-|                   | GetSummary                             |             |
-|                   | ListByAsset / AllByAsset               |             |
+| **Reports**       | Get                                    | ✅          |
+|                   | GetSummary                             | ✅          |
+|                   | ListByAsset / AllByAsset               | ✅          |
 | **Webhooks**      | Get                                    |             |
 |                   | Update                                 |             |
 |                   | Delete                                 |             |
