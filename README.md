@@ -99,8 +99,8 @@ func main() {
 | **Findings**      | Get                                    | ✅          |
 |                   | VerifyFix                              | ✅          |
 |                   | ListByAsset / AllByAsset               | ✅          |
-| **Meta**          | GetOpenAPISpec                         |             |
-|                   | GetWebhookSigningKeys                  |             |
+| **Meta**          | GetOpenAPISpec                         | ✅          |
+|                   | GetWebhookSigningKeys                  | ✅          |
 | **Organizations** | Get                                    |             |
 |                   | Update                                 |             |
 |                   | ListByIntegration / AllByIntegration   |             |
