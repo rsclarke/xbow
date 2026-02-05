@@ -41,10 +41,11 @@ type Client struct {
 	httpClient *http.Client
 
 	// Services
-	Assessments *AssessmentsService
-	Assets      *AssetsService
-	Findings    *FindingsService
-	Meta        *MetaService
+	Assessments   *AssessmentsService
+	Assets        *AssetsService
+	Findings      *FindingsService
+	Meta          *MetaService
+	Organizations *OrganizationsService
 }
 
 // ClientOption is a functional option for configuring the Client.
@@ -114,6 +115,7 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	c.Assets = &AssetsService{client: c}
 	c.Findings = &FindingsService{client: c}
 	c.Meta = &MetaService{client: c}
+	c.Organizations = &OrganizationsService{client: c}
 
 	return c, nil
 }

@@ -101,12 +101,12 @@ func main() {
 |                   | ListByAsset / AllByAsset               | ✅          |
 | **Meta**          | GetOpenAPISpec                         | ✅          |
 |                   | GetWebhookSigningKeys                  | ✅          |
-| **Organizations** | Get                                    |             |
-|                   | Update                                 |             |
-|                   | ListByIntegration / AllByIntegration   |             |
-|                   | Create                                 |             |
-|                   | CreateKey                              |             |
-|                   | RevokeKey                              |             |
+| **Organizations** | Get                                    | ✅          |
+|                   | Update                                 | ✅          |
+|                   | ListByIntegration / AllByIntegration   | ✅          |
+|                   | Create                                 | ✅          |
+|                   | CreateKey                              | ✅          |
+|                   | RevokeKey                              | ✅          |
 | **Reports**       | Get                                    |             |
 |                   | GetSummary                             |             |
 |                   | ListByAsset / AllByAsset               |             |
