@@ -23,6 +23,10 @@ type WebhookSigningKey struct {
 // GetOpenAPISpec retrieves the OpenAPI specification for the current API version.
 // The response is returned as raw JSON bytes since the schema is dynamic.
 func (s *MetaService) GetOpenAPISpec(ctx context.Context) ([]byte, error) {
+	if s.client.orgKey == "" {
+		return nil, &Error{Code: "ERR_MISSING_ORG_KEY", Message: "organization key is required; provide xbow.WithOrganizationKey(...)"}
+	}
+
 	url := s.client.baseURL + "/api/v1/meta/openapi.json"
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -30,7 +34,7 @@ func (s *MetaService) GetOpenAPISpec(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.client.apiKey)
+	req.Header.Set("Authorization", "Bearer "+s.client.orgKey)
 	req.Header.Set("X-XBOW-API-Version", APIVersion)
 
 	resp, err := s.client.httpClient.Do(req)
@@ -58,13 +62,18 @@ func (s *MetaService) GetOpenAPISpec(ctx context.Context) ([]byte, error) {
 // Use these keys to verify webhook signatures. The array supports key rotation -
 // during rotation, multiple keys may be active.
 func (s *MetaService) GetWebhookSigningKeys(ctx context.Context) ([]WebhookSigningKey, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.GetAPIV1MetaWebhooksSigningKeysRequestOptions{
 		Header: &api.GetAPIV1MetaWebhooksSigningKeysHeaders{
 			XXBOWAPIVersion: api.GetAPIV1MetaWebhooksSigningKeysHeaderXXBOWAPIVersionN20260201,
 		},
 	}
 
-	resp, err := s.client.raw.GetAPIV1MetaWebhooksSigningKeys(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1MetaWebhooksSigningKeys(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}

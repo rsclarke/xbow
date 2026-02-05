@@ -5,7 +5,17 @@
 //
 // Example usage:
 //
-//	client, err := xbow.NewClient("your-api-key")
+//	// Most endpoints use an organization key
+//	client, err := xbow.NewClient(xbow.WithOrganizationKey("your-org-key"))
+//
+//	// Organization management endpoints require an integration key
+//	client, err := xbow.NewClient(xbow.WithIntegrationKey("your-integration-key"))
+//
+//	// Use both keys for full access
+//	client, err := xbow.NewClient(
+//	    xbow.WithOrganizationKey("your-org-key"),
+//	    xbow.WithIntegrationKey("your-integration-key"),
+//	)
 //
 //	// Get an assessment
 //	assessment, err := client.Assessments.Get(ctx, "assessment-id")
@@ -21,6 +31,7 @@ package xbow
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/doordash-oss/oapi-codegen-dd/v3/pkg/runtime"
@@ -35,10 +46,11 @@ const (
 
 // Client manages communication with the XBOW API.
 type Client struct {
-	raw        *api.Client
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
+	raw            *api.Client
+	orgKey         string
+	integrationKey string
+	baseURL        string
+	httpClient     *http.Client
 
 	// Services
 	Assessments   *AssessmentsService
@@ -53,9 +65,11 @@ type Client struct {
 type ClientOption func(*clientConfig)
 
 type clientConfig struct {
-	baseURL       string
-	httpClient    *http.Client
-	apiClientOpts []runtime.APIClientOption
+	baseURL        string
+	httpClient     *http.Client
+	apiClientOpts  []runtime.APIClientOption
+	orgKey         string
+	integrationKey string
 }
 
 // WithBaseURL sets a custom base URL.
@@ -89,8 +103,22 @@ func WithAPIClientOption(opt runtime.APIClientOption) ClientOption {
 	}
 }
 
-// NewClient creates a new XBOW API client with the given API key.
-func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
+// WithOrganizationKey sets the organization API key for authenticating with most endpoints.
+func WithOrganizationKey(key string) ClientOption {
+	return func(c *clientConfig) {
+		c.orgKey = key
+	}
+}
+
+// WithIntegrationKey sets the integration API key for authenticating with organization management endpoints.
+func WithIntegrationKey(key string) ClientOption {
+	return func(c *clientConfig) {
+		c.integrationKey = key
+	}
+}
+
+// NewClient creates a new XBOW API client.
+func NewClient(opts ...ClientOption) (*Client, error) {
 	cfg := &clientConfig{
 		baseURL:    DefaultBaseURL,
 		httpClient: http.DefaultClient,
@@ -106,10 +134,11 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	}
 
 	c := &Client{
-		raw:        raw,
-		apiKey:     apiKey,
-		baseURL:    cfg.baseURL,
-		httpClient: cfg.httpClient,
+		raw:            raw,
+		orgKey:         cfg.orgKey,
+		integrationKey: cfg.integrationKey,
+		baseURL:        cfg.baseURL,
+		httpClient:     cfg.httpClient,
 	}
 
 	c.Assessments = &AssessmentsService{client: c}
@@ -127,10 +156,40 @@ func (c *Client) Raw() *api.Client {
 	return c.raw
 }
 
-// authEditor returns a request editor that adds authentication headers.
-func (c *Client) authEditor() runtime.RequestEditorFn {
+// authEditorFor returns a request editor that adds authentication headers for the given key.
+func (c *Client) authEditorFor(key string) runtime.RequestEditorFn {
 	return func(ctx context.Context, req *http.Request) error {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+		req.Header.Set("Authorization", "Bearer "+key)
 		return nil
 	}
+}
+
+// orgAuthEditor returns a request editor using the organization key.
+// Returns an error if the organization key is not set.
+func (c *Client) orgAuthEditor() (runtime.RequestEditorFn, error) {
+	if c.orgKey == "" {
+		return nil, fmt.Errorf("xbow: organization key is required; provide xbow.WithOrganizationKey(...)")
+	}
+	return c.authEditorFor(c.orgKey), nil
+}
+
+// integrationAuthEditor returns a request editor using the integration key.
+// Returns an error if the integration key is not set.
+func (c *Client) integrationAuthEditor() (runtime.RequestEditorFn, error) {
+	if c.integrationKey == "" {
+		return nil, fmt.Errorf("xbow: integration key is required; provide xbow.WithIntegrationKey(...)")
+	}
+	return c.authEditorFor(c.integrationKey), nil
+}
+
+// orgOrIntegrationAuthEditor returns a request editor preferring integration key, falling back to org key.
+// Returns an error if neither key is set.
+func (c *Client) orgOrIntegrationAuthEditor() (runtime.RequestEditorFn, error) {
+	if c.integrationKey != "" {
+		return c.authEditorFor(c.integrationKey), nil
+	}
+	if c.orgKey != "" {
+		return c.authEditorFor(c.orgKey), nil
+	}
+	return nil, fmt.Errorf("xbow: organization key or integration key is required; provide xbow.WithOrganizationKey(...) or xbow.WithIntegrationKey(...)")
 }

@@ -40,6 +40,11 @@ type AssetsService struct {
 
 // Get retrieves an asset by ID.
 func (s *AssetsService) Get(ctx context.Context, id string) (*Asset, error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.GetAPIV1AssetsAssetIDRequestOptions{
 		PathParams: &api.GetAPIV1AssetsAssetIDPath{
 			AssetID: id,
@@ -49,7 +54,7 @@ func (s *AssetsService) Get(ctx context.Context, id string) (*Asset, error) {
 		},
 	}
 
-	resp, err := s.client.raw.GetAPIV1AssetsAssetID(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1AssetsAssetID(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -76,6 +81,11 @@ func (s *AssetsService) Update(ctx context.Context, id string, req *UpdateAssetR
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "UpdateAssetRequest cannot be nil"}
 	}
 
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PutAPIV1AssetsAssetIDRequestOptions{
 		PathParams: &api.PutAPIV1AssetsAssetIDPath{
 			AssetID: id,
@@ -96,7 +106,7 @@ func (s *AssetsService) Update(ctx context.Context, id string, req *UpdateAssetR
 		},
 	}
 
-	resp, err := s.client.raw.PutAPIV1AssetsAssetID(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PutAPIV1AssetsAssetID(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -116,6 +126,11 @@ func (s *AssetsService) Create(ctx context.Context, organizationID string, req *
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateAssetRequest cannot be nil"}
 	}
 
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &api.PostAPIV1OrganizationsOrganizationIDAssetsRequestOptions{
 		PathParams: &api.PostAPIV1OrganizationsOrganizationIDAssetsPath{
 			OrganizationID: organizationID,
@@ -129,7 +144,7 @@ func (s *AssetsService) Create(ctx context.Context, organizationID string, req *
 		},
 	}
 
-	resp, err := s.client.raw.PostAPIV1OrganizationsOrganizationIDAssets(ctx, opts, s.client.authEditor())
+	resp, err := s.client.raw.PostAPIV1OrganizationsOrganizationIDAssets(ctx, opts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
@@ -139,6 +154,11 @@ func (s *AssetsService) Create(ctx context.Context, organizationID string, req *
 
 // ListByOrganization returns a page of assets for an organization.
 func (s *AssetsService) ListByOrganization(ctx context.Context, organizationID string, opts *ListOptions) (*Page[AssetListItem], error) {
+	auth, err := s.client.orgAuthEditor()
+	if err != nil {
+		return nil, err
+	}
+
 	reqOpts := &api.GetAPIV1OrganizationsOrganizationIDAssetsRequestOptions{
 		PathParams: &api.GetAPIV1OrganizationsOrganizationIDAssetsPath{
 			OrganizationID: organizationID,
@@ -158,7 +178,7 @@ func (s *AssetsService) ListByOrganization(ctx context.Context, organizationID s
 		}
 	}
 
-	resp, err := s.client.raw.GetAPIV1OrganizationsOrganizationIDAssets(ctx, reqOpts, s.client.authEditor())
+	resp, err := s.client.raw.GetAPIV1OrganizationsOrganizationIDAssets(ctx, reqOpts, auth)
 	if err != nil {
 		return nil, wrapError(err)
 	}
