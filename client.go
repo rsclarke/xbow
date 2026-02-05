@@ -46,6 +46,7 @@ type Client struct {
 	Findings      *FindingsService
 	Meta          *MetaService
 	Organizations *OrganizationsService
+	Reports       *ReportsService
 }
 
 // ClientOption is a functional option for configuring the Client.
@@ -116,6 +117,7 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	c.Findings = &FindingsService{client: c}
 	c.Meta = &MetaService{client: c}
 	c.Organizations = &OrganizationsService{client: c}
+	c.Reports = &ReportsService{client: c}
 
 	return c, nil
 }
