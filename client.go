@@ -31,7 +31,6 @@ package xbow
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/doordash-oss/oapi-codegen-dd/v3/pkg/runtime"
@@ -170,7 +169,7 @@ func (c *Client) authEditorFor(key string) runtime.RequestEditorFn {
 // Returns an error if the organization key is not set.
 func (c *Client) orgAuthEditor() (runtime.RequestEditorFn, error) {
 	if c.orgKey == "" {
-		return nil, fmt.Errorf("xbow: organization key is required; provide xbow.WithOrganizationKey(...)")
+		return nil, ErrMissingOrgKey
 	}
 	return c.authEditorFor(c.orgKey), nil
 }
@@ -179,7 +178,7 @@ func (c *Client) orgAuthEditor() (runtime.RequestEditorFn, error) {
 // Returns an error if the integration key is not set.
 func (c *Client) integrationAuthEditor() (runtime.RequestEditorFn, error) {
 	if c.integrationKey == "" {
-		return nil, fmt.Errorf("xbow: integration key is required; provide xbow.WithIntegrationKey(...)")
+		return nil, ErrMissingIntegrationKey
 	}
 	return c.authEditorFor(c.integrationKey), nil
 }
@@ -193,5 +192,5 @@ func (c *Client) orgOrIntegrationAuthEditor() (runtime.RequestEditorFn, error) {
 	if c.orgKey != "" {
 		return c.authEditorFor(c.orgKey), nil
 	}
-	return nil, fmt.Errorf("xbow: organization key or integration key is required; provide xbow.WithOrganizationKey(...) or xbow.WithIntegrationKey(...)")
+	return nil, ErrMissingAnyKey
 }

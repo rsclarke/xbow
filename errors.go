@@ -30,6 +30,11 @@ var (
 	ErrForbidden      = errors.New("forbidden")
 	ErrRateLimited    = errors.New("rate limited")
 	ErrInternalServer = errors.New("internal server error")
+
+	// Client-side configuration errors.
+	ErrMissingOrgKey         = errors.New("xbow: organization key is required")
+	ErrMissingIntegrationKey = errors.New("xbow: integration key is required")
+	ErrMissingAnyKey         = errors.New("xbow: organization key or integration key is required")
 )
 
 // Error represents an API error response.
