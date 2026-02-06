@@ -80,6 +80,19 @@ xbow assessment resume <assessment-id>
 xbow assessment cancel <assessment-id>
 ```
 
+### Findings
+
+```bash
+# Get a finding
+xbow finding get <finding-id>
+
+# List all findings for an asset
+xbow finding list --asset-id <asset-id>
+
+# Verify that a finding has been fixed (triggers a targeted assessment)
+xbow finding verify-fix <finding-id>
+```
+
 ### Output Formats
 
 ```bash
