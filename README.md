@@ -97,6 +97,19 @@ xbow finding list --asset-id <asset-id>
 xbow finding verify-fix <finding-id>
 ```
 
+### Meta
+
+```bash
+# Get the OpenAPI specification
+xbow meta openapi
+
+# Save the OpenAPI specification to a file
+xbow meta openapi --output-file openapi.json
+
+# Get webhook signing keys
+xbow meta signing-keys
+```
+
 ### Output Formats
 
 ```bash
