@@ -1,15 +1,27 @@
 version: "2"
 linters:
   enable:
+    - bodyclose
+    - errcheck
     - errorlint
     - godot
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
     - nilerr
+    - noctx
+    - nolintlint
     - predeclared
     - revive
     - staticcheck
     - unconvert
     - unparam
   settings:
+    errcheck:
+      check-type-assertions: true
+      exclude-functions:
+        - (io.Closer).Close
     errorlint:
       errorf: true
       asserts: true
@@ -22,6 +34,9 @@ linters:
         - name: package-comments
         - name: receiver-naming
         - name: indent-error-flow
+    nolintlint:
+      require-explanation: true
+      require-specific: true
     staticcheck:
       checks:
         - all
