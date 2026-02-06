@@ -2,9 +2,17 @@
 
 > **⚠️ Unofficial & Alpha**: This is **not** an official XBOW library. It is a personal/community project and is currently in **alpha**. The API may change without notice.
 
-An idiomatic Go client library for the [XBOW API](https://docs.xbow.com/api/), following [google/go-github](https://github.com/google/go-github) patterns.
+An idiomatic Go client library and CLI for the [XBOW API](https://docs.xbow.com/api/), following [google/go-github](https://github.com/google/go-github) patterns.
 
 ## Installation
+
+### CLI
+
+```bash
+go install github.com/rsclarke/xbow/cmd/xbow@latest
+```
+
+### Library
 
 ```bash
 go get github.com/rsclarke/xbow
@@ -12,7 +20,59 @@ go get github.com/rsclarke/xbow
 
 Requires Go 1.23+ (uses `iter.Seq2` for pagination).
 
-## Usage
+## CLI Usage
+
+The `xbow` CLI provides command-line access to the XBOW API.
+
+### Authentication
+
+Set your API key via environment variable or flag:
+
+```bash
+# Organization key (for most operations)
+export XBOW_ORG_KEY="your-org-key"
+
+# Or pass directly
+xbow --org-key "your-org-key" assessment list --asset-id abc123
+```
+
+### Assessments
+
+```bash
+# Create an assessment
+xbow assessment create --asset-id <asset-id> --attack-credits 100 --objective "Find vulnerabilities"
+
+# Get an assessment
+xbow assessment get <assessment-id>
+
+# List all assessments for an asset
+xbow assessment list --asset-id <asset-id>
+
+# Control assessment execution
+xbow assessment pause <assessment-id>
+xbow assessment resume <assessment-id>
+xbow assessment cancel <assessment-id>
+```
+
+### Output Formats
+
+```bash
+# Table output (default)
+xbow assessment get <id>
+
+# JSON output
+xbow assessment get <id> --output json
+```
+
+### Global Flags
+
+| Flag | Environment Variable | Description |
+|------|---------------------|-------------|
+| `--org-key` | `XBOW_ORG_KEY` | Organization API key |
+| `--integration-key` | `XBOW_INTEGRATION_KEY` | Integration API key |
+| `--output`, `-o` | - | Output format: `table` (default), `json` |
+
+## Library Usage
 
 ```go
 package main
