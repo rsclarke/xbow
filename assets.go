@@ -64,15 +64,15 @@ func (s *AssetsService) Get(ctx context.Context, id string) (*Asset, error) {
 
 // UpdateAssetRequest specifies the parameters for updating an asset.
 type UpdateAssetRequest struct {
-	Name                 string
-	StartURL             string
-	MaxRequestsPerSecond int
-	Sku                  *string
-	ApprovedTimeWindows  *ApprovedTimeWindows
-	Credentials          []Credential
-	DNSBoundaryRules     []DNSBoundaryRule
-	Headers              map[string][]string
-	HTTPBoundaryRules    []HTTPBoundaryRule
+	Name                 string               `json:"name"`
+	StartURL             string               `json:"startUrl"`
+	MaxRequestsPerSecond int                  `json:"maxRequestsPerSecond"`
+	Sku                  *string              `json:"sku,omitempty"`
+	ApprovedTimeWindows  *ApprovedTimeWindows `json:"approvedTimeWindows,omitempty"`
+	Credentials          []Credential         `json:"credentials"`
+	DNSBoundaryRules     []DNSBoundaryRule    `json:"dnsBoundaryRules"`
+	Headers              map[string][]string  `json:"headers"`
+	HTTPBoundaryRules    []HTTPBoundaryRule   `json:"httpBoundaryRules"`
 }
 
 // Update updates an asset.
