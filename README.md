@@ -36,6 +36,32 @@ export XBOW_ORG_KEY="your-org-key"
 xbow --org-key "your-org-key" assessment list --asset-id abc123
 ```
 
+### Assets
+
+```bash
+# Create an asset
+xbow asset create --org-id <org-id> --name "My App" --sku standard-sku
+
+# Get an asset
+xbow asset get <asset-id>
+
+# List all assets for an organization
+xbow asset list --org-id <org-id>
+
+# Update simple fields (GET-then-PUT; unspecified fields are preserved)
+xbow asset update <asset-id> --name "New Name" --start-url "https://example.com" --max-rps 10
+
+# Update with repeatable structured flags
+xbow asset update <asset-id> \
+  --header "X-Custom: value" \
+  --credential "name=admin,type=basic,username=u,password=p" \
+  --dns-rule "action=allow-attack,type=hostname,filter=example.com,include-subdomains=true" \
+  --http-rule "action=deny,type=url,filter=https://evil.com"
+
+# Full replacement from a JSON file (or - for stdin)
+xbow asset update <asset-id> --from-file asset.json
+```
+
 ### Assessments
 
 ```bash
