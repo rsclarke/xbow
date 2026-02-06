@@ -70,6 +70,7 @@ type clientConfig struct {
 	apiClientOpts  []runtime.APIClientOption
 	orgKey         string
 	integrationKey string
+	rateLimiter    RateLimiter
 }
 
 // WithBaseURL sets a custom base URL.
@@ -117,6 +118,23 @@ func WithIntegrationKey(key string) ClientOption {
 	}
 }
 
+// WithRateLimiter sets a rate limiter that will be called before each API request.
+// The limiter's Wait method is called before every HTTP request, allowing you to
+// implement strategies like token bucket or leaky bucket rate limiting.
+//
+// Compatible with golang.org/x/time/rate.Limiter:
+//
+//	limiter := rate.NewLimiter(rate.Every(time.Second), 10) // 10 req/sec with burst of 10
+//	client, err := xbow.NewClient(
+//	    xbow.WithOrganizationKey("key"),
+//	    xbow.WithRateLimiter(limiter),
+//	)
+func WithRateLimiter(limiter RateLimiter) ClientOption {
+	return func(c *clientConfig) {
+		c.rateLimiter = limiter
+	}
+}
+
 // NewClient creates a new XBOW API client.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	cfg := &clientConfig{
@@ -126,6 +144,22 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 
 	for _, opt := range opts {
 		opt(cfg)
+	}
+
+	// Wrap HTTP client with rate limiter if configured
+	if cfg.rateLimiter != nil {
+		transport := cfg.httpClient.Transport
+		if transport == nil {
+			transport = http.DefaultTransport
+		}
+		rateLimitedClient := &http.Client{
+			Transport:     &rateLimitTransport{base: transport, limiter: cfg.rateLimiter},
+			CheckRedirect: cfg.httpClient.CheckRedirect,
+			Jar:           cfg.httpClient.Jar,
+			Timeout:       cfg.httpClient.Timeout,
+		}
+		cfg.httpClient = rateLimitedClient
+		cfg.apiClientOpts = append(cfg.apiClientOpts, runtime.WithHTTPClient(&httpClientWrapper{client: rateLimitedClient}))
 	}
 
 	raw, err := api.NewDefaultClient(cfg.baseURL, cfg.apiClientOpts...)
