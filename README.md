@@ -97,6 +97,36 @@ xbow finding list --asset-id <asset-id>
 xbow finding verify-fix <finding-id>
 ```
 
+### Organizations
+
+Organization management requires an integration key (`--integration-key` or `XBOW_INTEGRATION_KEY`).
+The `get` subcommand also accepts an organization key.
+
+```bash
+# Get an organization
+xbow organization get <org-id>
+
+# List organizations for an integration
+xbow organization list --integration-id <integration-id>
+
+# Create an organization with members
+xbow organization create \
+  --integration-id <integration-id> \
+  --name "My Org" \
+  --external-id "ext-123" \
+  --member "email=alice@example.com,name=Alice" \
+  --member "email=bob@example.com,name=Bob"
+
+# Update an organization
+xbow organization update <org-id> --name "New Name" --external-id "ext-456"
+
+# Create an API key for an organization
+xbow organization create-key <org-id> --name "CI Key" --expires-in-days 90
+
+# Revoke an API key
+xbow organization revoke-key <key-id>
+```
+
 ### Meta
 
 ```bash
