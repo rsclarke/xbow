@@ -83,42 +83,6 @@ func main() {
 }
 ```
 
-## API Coverage
-
-| Service           | Operation                              | Implemented |
-|-------------------|----------------------------------------|:-----------:|
-| **Assessments**   | Get                                    | ✅          |
-|                   | Create                                 | ✅          |
-|                   | ListByAsset / AllByAsset               | ✅          |
-|                   | Cancel                                 | ✅          |
-|                   | Pause                                  | ✅          |
-|                   | Resume                                 | ✅          |
-| **Assets**        | Get                                    | ✅          |
-|                   | Update                                 | ✅          |
-|                   | ListByOrganization / AllByOrganization | ✅          |
-|                   | Create                                 | ✅          |
-| **Findings**      | Get                                    | ✅          |
-|                   | VerifyFix                              | ✅          |
-|                   | ListByAsset / AllByAsset               | ✅          |
-| **Meta**          | GetOpenAPISpec                         | ✅          |
-|                   | GetWebhookSigningKeys                  | ✅          |
-| **Organizations** | Get                                    | ✅          |
-|                   | Update                                 | ✅          |
-|                   | ListByIntegration / AllByIntegration   | ✅          |
-|                   | Create                                 | ✅          |
-|                   | CreateKey                              | ✅          |
-|                   | RevokeKey                              | ✅          |
-| **Reports**       | Get                                    | ✅          |
-|                   | GetSummary                             | ✅          |
-|                   | ListByAsset / AllByAsset               | ✅          |
-| **Webhooks**      | Get                                    | ✅          |
-|                   | Update                                 | ✅          |
-|                   | Delete                                 | ✅          |
-|                   | Ping                                   | ✅          |
-|                   | ListByOrganization / AllByOrganization | ✅          |
-|                   | Create                                 | ✅          |
-|                   | ListDeliveries / AllDeliveries         | ✅          |
-
 ## Authentication
 
 The XBOW API uses two types of API keys:
