@@ -39,7 +39,7 @@ var metaOpenapiCmd = &cobra.Command{
 		}
 
 		if metaOpenapiOutputFile != "" {
-			if err := os.WriteFile(filepath.Clean(metaOpenapiOutputFile), data, 0o644); err != nil {
+			if err := os.WriteFile(filepath.Clean(metaOpenapiOutputFile), data, 0o644); err != nil { //nolint:gosec // OpenAPI spec is not sensitive; world-readable is intentional.
 				return fmt.Errorf("writing file: %w", err)
 			}
 			fmt.Fprintf(os.Stderr, "Written to %s\n", metaOpenapiOutputFile)
