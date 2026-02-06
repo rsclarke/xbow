@@ -25,7 +25,6 @@ func init() {
 	assessmentCmd.AddCommand(assessmentResumeCmd)
 }
 
-// xbow assessment get <id>
 var assessmentGetCmd = &cobra.Command{
 	Use:   "get <assessment-id>",
 	Short: "Get an assessment by ID",
@@ -45,7 +44,6 @@ var assessmentGetCmd = &cobra.Command{
 	},
 }
 
-// xbow assessment create --asset-id <id> --attack-credits <n> [--objective <text>]
 var (
 	createAssetID       string
 	createAttackCredits int64
@@ -85,7 +83,6 @@ func init() {
 	_ = assessmentCreateCmd.MarkFlagRequired("attack-credits")
 }
 
-// xbow assessment list --asset-id <id> [--limit <n>]
 var (
 	listAssetID string
 	listLimit   int
@@ -115,7 +112,6 @@ func init() {
 	_ = assessmentListCmd.MarkFlagRequired("asset-id")
 }
 
-// xbow assessment cancel <id>
 var assessmentCancelCmd = &cobra.Command{
 	Use:   "cancel <assessment-id>",
 	Short: "Cancel a running assessment",
@@ -135,7 +131,6 @@ var assessmentCancelCmd = &cobra.Command{
 	},
 }
 
-// xbow assessment pause <id>
 var assessmentPauseCmd = &cobra.Command{
 	Use:   "pause <assessment-id>",
 	Short: "Pause a running assessment",
@@ -155,7 +150,6 @@ var assessmentPauseCmd = &cobra.Command{
 	},
 }
 
-// xbow assessment resume <id>
 var assessmentResumeCmd = &cobra.Command{
 	Use:   "resume <assessment-id>",
 	Short: "Resume a paused assessment",

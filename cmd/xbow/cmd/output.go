@@ -1,3 +1,4 @@
+// Package cmd implements the xbow CLI commands.
 package cmd
 
 import (
@@ -21,9 +22,9 @@ func newTabWriter() *tabwriter.Writer {
 func printRow(w io.Writer, cols ...any) {
 	for i, col := range cols {
 		if i > 0 {
-			fmt.Fprint(w, "\t")
+			_, _ = fmt.Fprint(w, "\t")
 		}
-		fmt.Fprint(w, col)
+		_, _ = fmt.Fprint(w, col)
 	}
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 }

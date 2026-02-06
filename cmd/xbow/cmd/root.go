@@ -20,6 +20,7 @@ var rootCmd = &cobra.Command{
 	Long:  `A command-line interface for interacting with the XBOW security assessment platform.`,
 }
 
+// Execute runs the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }
