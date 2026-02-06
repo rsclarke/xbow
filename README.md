@@ -52,6 +52,10 @@ xbow asset list --org-id <org-id>
 xbow asset update <asset-id> --name "New Name" --start-url "https://example.com" --max-rps 10
 
 # Update with repeatable structured flags
+# NOTE: Repeatable flags (--header, --credential, --dns-rule, --http-rule)
+# perform a full replacement of that field. If you specify any values for a
+# flag, they replace ALL existing values — omitted entries are removed.
+# To keep existing entries, re-specify them alongside any new ones.
 xbow asset update <asset-id> \
   --header "X-Custom: value" \
   --credential "name=admin,type=basic,username=u,password=p" \
