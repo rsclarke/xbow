@@ -88,6 +88,24 @@ client, _ := xbow.NewClient(
 )
 ```
 
+## Rate Limiting
+
+The API may return `429 Too Many Requests` responses. You can configure a rate limiter to automatically throttle requests:
+
+```go
+import "golang.org/x/time/rate"
+
+// 10 requests per second with burst of 10
+limiter := rate.NewLimiter(rate.Every(time.Second), 10)
+
+client, _ := xbow.NewClient(
+    xbow.WithOrganizationKey("your-org-key"),
+    xbow.WithRateLimiter(limiter),
+)
+```
+
+The `RateLimiter` interface requires only a `Wait(context.Context) error` method, so you can provide any custom implementation.
+
 ## Pagination
 
 List methods return a single page. Use `All*` methods for automatic pagination:
