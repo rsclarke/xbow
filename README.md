@@ -41,44 +41,12 @@ func main() {
     }
     fmt.Printf("Assessment: %s (%s)\n", assessment.Name, assessment.State)
 
-    // Create a new assessment
-    assessment, err = client.Assessments.Create(ctx, "asset-id", &xbow.CreateAssessmentRequest{
-        AttackCredits: 100,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // List all assessments for an asset with automatic pagination
-    for assessment, err := range client.Assessments.AllByAsset(ctx, "asset-id", nil) {
+    // List all findings for the assessment's asset
+    for finding, err := range client.Findings.AllByAsset(ctx, assessment.AssetID, nil) {
         if err != nil {
             log.Fatal(err)
         }
-        fmt.Printf("- %s: %s\n", assessment.Name, assessment.State)
-    }
-
-    // Get an asset
-    asset, err := client.Assets.Get(ctx, "asset-id")
-    if err != nil {
-        log.Fatal(err)
-    }
-    fmt.Printf("Asset: %s (%s)\n", asset.Name, asset.Lifecycle)
-
-    // Create a new asset
-    asset, err = client.Assets.Create(ctx, "organization-id", &xbow.CreateAssetRequest{
-        Name: "My Web App",
-        Sku:  "standard-sku",
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // List all assets in an organization
-    for asset, err := range client.Assets.AllByOrganization(ctx, "organization-id", nil) {
-        if err != nil {
-            log.Fatal(err)
-        }
-        fmt.Printf("- %s: %s\n", asset.Name, asset.Lifecycle)
+        fmt.Printf("- %s: %s (%s)\n", finding.Name, finding.Severity, finding.State)
     }
 }
 ```
