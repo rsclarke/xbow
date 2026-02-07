@@ -222,12 +222,7 @@ var orgRevokeKeyCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.Organizations.RevokeKey(context.Background(), args[0]); err != nil {
-			return err
-		}
-
-		fmt.Println("Key revoked successfully.")
-		return nil
+		return client.Organizations.RevokeKey(context.Background(), args[0])
 	},
 }
 

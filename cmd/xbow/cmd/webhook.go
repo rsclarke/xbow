@@ -155,12 +155,7 @@ var webhookDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.Webhooks.Delete(context.Background(), args[0]); err != nil {
-			return err
-		}
-
-		fmt.Println("Webhook deleted.")
-		return nil
+		return client.Webhooks.Delete(context.Background(), args[0])
 	},
 }
 
@@ -176,12 +171,7 @@ var webhookPingCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.Webhooks.Ping(context.Background(), args[0]); err != nil {
-			return err
-		}
-
-		fmt.Println("Ping sent.")
-		return nil
+		return client.Webhooks.Ping(context.Background(), args[0])
 	},
 }
 
