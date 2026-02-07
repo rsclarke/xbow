@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"iter"
-	"strings"
 
 	"github.com/rsclarke/xbow"
 	"github.com/spf13/cobra"
@@ -263,7 +262,7 @@ func printOrganization(o *xbow.Organization) error {
 	if o.ExternalID != nil {
 		printRow(w, "EXTERNAL ID:", *o.ExternalID)
 	}
-	printRow(w, "STATE:", strings.ToUpper(string(o.State)))
+	printRow(w, "STATE:", o.State)
 	printRow(w, "CREATED:", o.CreatedAt.Format("2006-01-02 15:04:05"))
 	printRow(w, "UPDATED:", o.UpdatedAt.Format("2006-01-02 15:04:05"))
 	return w.Flush()
@@ -287,7 +286,7 @@ func printOrganizationList(iter iter.Seq2[xbow.OrganizationListItem, error]) err
 		if err != nil {
 			return err
 		}
-		printRow(w, o.ID, o.Name, strings.ToUpper(string(o.State)), o.CreatedAt.Format("2006-01-02"))
+		printRow(w, o.ID, o.Name, o.State, o.CreatedAt.Format("2006-01-02"))
 	}
 	return w.Flush()
 }
