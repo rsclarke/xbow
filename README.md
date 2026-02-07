@@ -97,6 +97,25 @@ xbow finding list --asset-id <asset-id>
 xbow finding verify-fix <finding-id>
 ```
 
+### Reports
+
+```bash
+# Download a report as PDF
+xbow report get <report-id> --output-file report.pdf
+
+# Or pipe to stdout
+xbow report get <report-id> > report.pdf
+
+# Get the markdown summary
+xbow report summary <report-id>
+
+# Save the summary to a file
+xbow report summary <report-id> --output-file summary.md
+
+# List all reports for an asset
+xbow report list --asset-id <asset-id>
+```
+
 ### Organizations
 
 Organization management requires an integration key (`--integration-key` or `XBOW_INTEGRATION_KEY`).
