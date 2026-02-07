@@ -10,8 +10,9 @@ import (
 )
 
 var metaCmd = &cobra.Command{
-	Use:   "meta",
-	Short: "API metadata and utilities",
+	Use:     "meta",
+	Aliases: []string{"metadata"},
+	Short:   "API metadata and utilities",
 }
 
 func init() {
