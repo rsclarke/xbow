@@ -268,7 +268,7 @@ func printWebhookList(iter iter.Seq2[xbow.WebhookListItem, error]) error {
 		if err != nil {
 			return err
 		}
-		printRow(w, wh.ID, wh.TargetURL, wh.APIVersion, strings.Join(webhookEventStrings(wh.Events), ","), wh.CreatedAt.Format("2006-01-02"))
+		printRow(w, wh.ID, wh.TargetURL, wh.APIVersion, strings.Join(webhookEventStrings(wh.Events), ", "), wh.CreatedAt.Format("2006-01-02"))
 	}
 	return w.Flush()
 }
