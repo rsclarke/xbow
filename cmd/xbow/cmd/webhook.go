@@ -155,12 +155,7 @@ var webhookDeleteCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.Webhooks.Delete(context.Background(), args[0]); err != nil {
-			return err
-		}
-
-		fmt.Println("Webhook deleted.")
-		return nil
+		return client.Webhooks.Delete(context.Background(), args[0])
 	},
 }
 
@@ -176,12 +171,7 @@ var webhookPingCmd = &cobra.Command{
 			return err
 		}
 
-		if err := client.Webhooks.Ping(context.Background(), args[0]); err != nil {
-			return err
-		}
-
-		fmt.Println("Ping sent.")
-		return nil
+		return client.Webhooks.Ping(context.Background(), args[0])
 	},
 }
 
@@ -278,7 +268,7 @@ func printWebhookList(iter iter.Seq2[xbow.WebhookListItem, error]) error {
 		if err != nil {
 			return err
 		}
-		printRow(w, wh.ID, wh.TargetURL, wh.APIVersion, strings.Join(webhookEventStrings(wh.Events), ","), wh.CreatedAt.Format("2006-01-02"))
+		printRow(w, wh.ID, wh.TargetURL, wh.APIVersion, strings.Join(webhookEventStrings(wh.Events), ", "), wh.CreatedAt.Format("2006-01-02"))
 	}
 	return w.Flush()
 }

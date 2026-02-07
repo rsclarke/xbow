@@ -10,8 +10,9 @@ import (
 )
 
 var metaCmd = &cobra.Command{
-	Use:   "meta",
-	Short: "API metadata and utilities",
+	Use:     "meta",
+	Aliases: []string{"metadata"},
+	Short:   "API metadata and utilities",
 }
 
 func init() {
@@ -42,7 +43,6 @@ var metaOpenapiCmd = &cobra.Command{
 			if err := os.WriteFile(filepath.Clean(metaOpenapiOutputFile), data, 0o644); err != nil { //nolint:gosec // OpenAPI spec is not sensitive; world-readable is intentional.
 				return fmt.Errorf("writing file: %w", err)
 			}
-			fmt.Fprintf(os.Stderr, "Written to %s\n", metaOpenapiOutputFile)
 			return nil
 		}
 

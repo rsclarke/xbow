@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"iter"
-	"strings"
 
 	"github.com/rsclarke/xbow"
 	"github.com/spf13/cobra"
@@ -106,8 +105,8 @@ func printFinding(f *xbow.Finding) error {
 	w := newTabWriter()
 	printRow(w, "ID:", f.ID)
 	printRow(w, "NAME:", f.Name)
-	printRow(w, "SEVERITY:", strings.ToUpper(string(f.Severity)))
-	printRow(w, "STATE:", strings.ToUpper(string(f.State)))
+	printRow(w, "SEVERITY:", f.Severity)
+	printRow(w, "STATE:", f.State)
 	printRow(w, "SUMMARY:", f.Summary)
 	printRow(w, "IMPACT:", f.Impact)
 	printRow(w, "MITIGATIONS:", f.Mitigations)
@@ -136,7 +135,7 @@ func printFindingList(iter iter.Seq2[xbow.FindingListItem, error]) error {
 		if err != nil {
 			return err
 		}
-		printRow(w, f.ID, f.Name, strings.ToUpper(string(f.Severity)), strings.ToUpper(string(f.State)), f.CreatedAt.Format("2006-01-02"))
+		printRow(w, f.ID, f.Name, f.Severity, f.State, f.CreatedAt.Format("2006-01-02"))
 	}
 	return w.Flush()
 }

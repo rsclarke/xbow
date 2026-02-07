@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"os"
+	"path/filepath"
 
 	"github.com/rsclarke/xbow"
 	"github.com/spf13/cobra"
@@ -43,7 +44,10 @@ var reportGetCmd = &cobra.Command{
 		}
 
 		if reportGetOutputFile != "" {
-			return os.WriteFile(reportGetOutputFile, data, 0o644) //nolint:gosec // PDF output file; 0644 is intentional
+			if err := os.WriteFile(filepath.Clean(reportGetOutputFile), data, 0o644); err != nil { //nolint:gosec // PDF output file; 0644 is intentional
+				return fmt.Errorf("writing file: %w", err)
+			}
+			return nil
 		}
 
 		_, err = os.Stdout.Write(data)
@@ -79,7 +83,10 @@ var reportSummaryCmd = &cobra.Command{
 		}
 
 		if reportSummaryOutputFile != "" {
-			return os.WriteFile(reportSummaryOutputFile, []byte(summary.Markdown), 0o644) //nolint:gosec // markdown output file; 0644 is intentional
+			if err := os.WriteFile(filepath.Clean(reportSummaryOutputFile), []byte(summary.Markdown), 0o644); err != nil { //nolint:gosec // markdown output file; 0644 is intentional
+				return fmt.Errorf("writing file: %w", err)
+			}
+			return nil
 		}
 
 		fmt.Print(summary.Markdown)

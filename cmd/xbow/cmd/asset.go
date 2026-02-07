@@ -431,7 +431,7 @@ func printAsset(a *xbow.Asset) error {
 	w := newTabWriter()
 	printRow(w, "ID:", a.ID)
 	printRow(w, "NAME:", a.Name)
-	printRow(w, "ORGANIZATION:", a.OrganizationID)
+	printRow(w, "ORGANIZATION ID:", a.OrganizationID)
 	printRow(w, "LIFECYCLE:", a.Lifecycle)
 	printRow(w, "SKU:", a.Sku)
 	if a.StartURL != nil {
