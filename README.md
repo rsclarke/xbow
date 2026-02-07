@@ -146,6 +146,32 @@ xbow organization create-key <org-id> --name "CI Key" --expires-in-days 90
 xbow organization revoke-key <key-id>
 ```
 
+### Webhooks
+
+```bash
+# List webhooks for an organization
+xbow webhook list --org-id <org-id>
+
+# Get a webhook
+xbow webhook get <webhook-id>
+
+# Create a webhook
+xbow webhook create --org-id <org-id> --target-url "https://example.com/hook" \
+  --event "assessment.changed" --event "finding.changed"
+
+# Update a webhook
+xbow webhook update <webhook-id> --target-url "https://example.com/new-hook"
+
+# Delete a webhook
+xbow webhook delete <webhook-id>
+
+# Ping a webhook (send a test event)
+xbow webhook ping <webhook-id>
+
+# List deliveries for a webhook (table shows summary; use --output json for full payloads)
+xbow webhook deliveries <webhook-id>
+```
+
 ### Meta
 
 ```bash
