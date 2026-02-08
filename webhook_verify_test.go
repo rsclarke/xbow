@@ -215,6 +215,24 @@ func TestWebhookVerifier_Verify(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
+
+	t.Run("invalid signature length", func(t *testing.T) {
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		shortSig := hex.EncodeToString(make([]byte, 32))
+
+		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewReader([]byte(`{}`)))
+		req.Header.Set(HeaderSignatureTimestamp, timestamp)
+		req.Header.Set(HeaderSignatureEd25519, shortSig)
+
+		err := v.Verify(req)
+		if err == nil {
+			t.Error("expected error for invalid signature length")
+		}
+		var xerr *Error
+		if !errors.As(err, &xerr) || xerr.Code != "ERR_INVALID_SIGNATURE" {
+			t.Errorf("expected ERR_INVALID_SIGNATURE, got %v", err)
+		}
+	})
 }
 
 func TestWebhookVerifier_MultipleKeys(t *testing.T) {
@@ -240,6 +258,61 @@ func TestWebhookVerifier_MultipleKeys(t *testing.T) {
 	if err := v.Verify(req); err != nil {
 		t.Errorf("should accept signature from first key: %v", err)
 	}
+}
+
+func TestWebhookVerifier_BodySizeLimit(t *testing.T) {
+	priv, b64 := generateTestKey(t)
+	maxBytes := int64(64)
+	v, err := NewWebhookVerifier(
+		[]WebhookSigningKey{{PublicKey: b64}},
+		WithMaxBodyBytes(maxBytes),
+	)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	t.Run("accepts body at limit", func(t *testing.T) {
+		body := make([]byte, maxBytes)
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		sig := signRequest(priv, timestamp, body)
+
+		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderSignatureTimestamp, timestamp)
+		req.Header.Set(HeaderSignatureEd25519, sig)
+
+		if err := v.Verify(req); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("rejects body exceeding limit", func(t *testing.T) {
+		body := make([]byte, maxBytes+1)
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		sig := signRequest(priv, timestamp, body)
+
+		req := httptest.NewRequest(http.MethodPost, "/webhook", bytes.NewReader(body))
+		req.Header.Set(HeaderSignatureTimestamp, timestamp)
+		req.Header.Set(HeaderSignatureEd25519, sig)
+
+		err := v.Verify(req)
+		if err == nil {
+			t.Error("expected error for oversized body")
+		}
+		var xerr *Error
+		if !errors.As(err, &xerr) || xerr.Code != "ERR_BODY_TOO_LARGE" {
+			t.Errorf("expected ERR_BODY_TOO_LARGE, got %v", err)
+		}
+	})
+
+	t.Run("default max body bytes", func(t *testing.T) {
+		v2, err := NewWebhookVerifier([]WebhookSigningKey{{PublicKey: b64}})
+		if err != nil {
+			t.Fatalf("failed to create verifier: %v", err)
+		}
+		if v2.maxBodyBytes != defaultMaxBodyBytes {
+			t.Errorf("expected default %d, got %d", defaultMaxBodyBytes, v2.maxBodyBytes)
+		}
+	})
 }
 
 func TestWebhookVerifier_Middleware(t *testing.T) {
