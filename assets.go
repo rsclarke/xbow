@@ -2,7 +2,10 @@ package xbow
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/rsclarke/xbow/internal/api"
@@ -193,52 +196,170 @@ func (s *AssetsService) AllByOrganization(ctx context.Context, organizationID st
 	})
 }
 
-// Conversion functions from generated types to domain types
+// assetFromJSON marshals a generated response to JSON and converts it to an Asset.
+// All three generated asset response types (Get, Put, Create) serialize to the
+// same JSON wire format, so a single conversion path handles all of them.
+//
+// The generated MarshalJSON methods can panic on nil oneOf pointers, so we use
+// structToMap (reflection-based, tag-aware) to build a plain map that bypasses
+// custom marshalers entirely.
+func assetFromJSON(resp any) *Asset {
+	m := structToMap(reflect.ValueOf(resp))
+	data, err := json.Marshal(m)
+	if err != nil {
+		return &Asset{}
+	}
+
+	var raw rawAssetJSON
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return &Asset{}
+	}
+
+	return raw.toAsset()
+}
+
+func structToMap(v reflect.Value) any {
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		if v.IsNil() {
+			return nil
+		}
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Struct:
+		if v.Type() == reflect.TypeOf(time.Time{}) {
+			return v.Interface()
+		}
+		m := make(map[string]any)
+		t := v.Type()
+		for i := range t.NumField() {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			tag := f.Tag.Get("json")
+			name, _, _ := strings.Cut(tag, ",")
+			if name == "" || name == "-" {
+				continue
+			}
+			m[name] = structToMap(v.Field(i))
+		}
+		return m
+	case reflect.Slice:
+		if v.IsNil() {
+			return nil
+		}
+		s := make([]any, v.Len())
+		for i := range v.Len() {
+			s[i] = structToMap(v.Index(i))
+		}
+		return s
+	case reflect.Map:
+		if v.IsNil() {
+			return nil
+		}
+		m := make(map[string]any, v.Len())
+		for _, k := range v.MapKeys() {
+			m[k.String()] = structToMap(v.MapIndex(k))
+		}
+		return m
+	default:
+		return v.Interface()
+	}
+}
 
 func assetFromGetResponse(r *api.GetAPIV1AssetsAssetIDResponse) *Asset {
-	return &Asset{
-		ID:                   r.ID,
-		Name:                 r.Name,
-		OrganizationID:       r.OrganizationID,
-		Lifecycle:            AssetLifecycle(r.Lifecycle),
-		Sku:                  r.Sku,
-		StartURL:             strPtrFromNullable(r.StartURL),
-		MaxRequestsPerSecond: intPtrFromNullable(r.MaxRequestsPerSecond),
-		ApprovedTimeWindows:  convertApprovedTimeWindowsFromGet(r.ApprovedTimeWindows),
-		Credentials:          convertCredentialsFromGet(r.Credentials),
-		DNSBoundaryRules:     convertDNSBoundaryRulesFromGet(r.DNSBoundaryRules),
-		Headers:              convertHeadersFromGet(r.Headers),
-		HTTPBoundaryRules:    convertHTTPBoundaryRulesFromGet(r.HTTPBoundaryRules),
-		Checks:               convertChecksFromGet(r.Checks),
-		ArchiveAt:            timePtrFromNullable(r.ArchiveAt),
-		CreatedAt:            r.CreatedAt,
-		UpdatedAt:            r.UpdatedAt,
-	}
+	return assetFromJSON(r)
 }
 
 func assetFromPutResponse(r *api.PutAPIV1AssetsAssetIDResponse) *Asset {
-	return &Asset{
-		ID:                   r.ID,
-		Name:                 r.Name,
-		OrganizationID:       r.OrganizationID,
-		Lifecycle:            AssetLifecycle(r.Lifecycle),
-		Sku:                  r.Sku,
-		StartURL:             strPtrFromNullable(r.StartURL),
-		MaxRequestsPerSecond: intPtrFromNullable(r.MaxRequestsPerSecond),
-		ApprovedTimeWindows:  convertApprovedTimeWindowsFromPut(r.ApprovedTimeWindows),
-		Credentials:          convertCredentialsFromPut(r.Credentials),
-		DNSBoundaryRules:     convertDNSBoundaryRulesFromPut(r.DNSBoundaryRules),
-		Headers:              convertHeadersFromPut(r.Headers),
-		HTTPBoundaryRules:    convertHTTPBoundaryRulesFromPut(r.HTTPBoundaryRules),
-		Checks:               convertChecksFromPut(r.Checks),
-		ArchiveAt:            timePtrFromNullable(r.ArchiveAt),
-		CreatedAt:            r.CreatedAt,
-		UpdatedAt:            r.UpdatedAt,
-	}
+	return assetFromJSON(r)
 }
 
 func assetFromCreateResponse(r *api.PostAPIV1OrganizationsOrganizationIDAssetsResponse) *Asset {
-	return &Asset{
+	return assetFromJSON(r)
+}
+
+type rawAssetJSON struct {
+	ID                   string                          `json:"id"`
+	Name                 string                          `json:"name"`
+	OrganizationID       string                          `json:"organizationId"`
+	Lifecycle            string                          `json:"lifecycle"`
+	Sku                  string                          `json:"sku"`
+	StartURL             string                          `json:"startUrl"`
+	MaxRequestsPerSecond int                             `json:"maxRequestsPerSecond"`
+	ApprovedTimeWindows  *rawApprovedTimeWindowsJSON     `json:"approvedTimeWindows,omitempty"`
+	Credentials          []rawCredentialJSON             `json:"credentials"`
+	DNSBoundaryRules     []rawDNSBoundaryRuleJSON        `json:"dnsBoundaryRules"`
+	Headers              map[string]json.RawMessage      `json:"headers"`
+	HTTPBoundaryRules    []rawHTTPBoundaryRuleJSON       `json:"httpBoundaryRules"`
+	Checks               rawChecksJSON                   `json:"checks"`
+	ArchiveAt            time.Time                       `json:"archiveAt"`
+	CreatedAt            time.Time                       `json:"createdAt"`
+	UpdatedAt            time.Time                       `json:"updatedAt"`
+}
+
+type rawApprovedTimeWindowsJSON struct {
+	Tz      string              `json:"tz"`
+	Entries []rawTimeWindowJSON `json:"entries"`
+}
+
+type rawTimeWindowJSON struct {
+	StartWeekday int    `json:"startWeekday"`
+	StartTime    string `json:"startTime"`
+	EndWeekday   int    `json:"endWeekday"`
+	EndTime      string `json:"endTime"`
+}
+
+type rawCredentialJSON struct {
+	ID               string  `json:"id"`
+	Name             string  `json:"name"`
+	Type             string  `json:"type"`
+	Username         string  `json:"username"`
+	Password         string  `json:"password"`
+	EmailAddress     *string `json:"emailAddress,omitempty"`
+	AuthenticatorURI *string `json:"authenticatorUri,omitempty"`
+}
+
+type rawDNSBoundaryRuleJSON struct {
+	ID                string `json:"id"`
+	Action            string `json:"action"`
+	Type              string `json:"type"`
+	Filter            string `json:"filter"`
+	IncludeSubdomains *bool  `json:"includeSubdomains,omitempty"`
+}
+
+type rawHTTPBoundaryRuleJSON struct {
+	ID                string `json:"id"`
+	Action            string `json:"action"`
+	Type              string `json:"type"`
+	Filter            string `json:"filter"`
+	IncludeSubdomains *bool  `json:"includeSubdomains,omitempty"`
+}
+
+type rawChecksJSON struct {
+	AssetReachable   rawCheckJSON `json:"assetReachable"`
+	Credentials      rawCheckJSON `json:"credentials"`
+	DNSBoundaryRules rawCheckJSON `json:"dnsBoundaryRules"`
+	UpdatedAt        time.Time    `json:"updatedAt"`
+}
+
+type rawCheckJSON struct {
+	State   string          `json:"state"`
+	Message string          `json:"message"`
+	Error   json.RawMessage `json:"error"`
+}
+
+type rawAssetCheckErrorJSON struct {
+	Type        string  `json:"type"`
+	Code        string  `json:"code,omitempty"`
+	Status      int     `json:"status,omitempty"`
+	WafProvider *string `json:"wafProvider,omitempty"`
+}
+
+func (r *rawAssetJSON) toAsset() *Asset {
+	a := &Asset{
 		ID:                   r.ID,
 		Name:                 r.Name,
 		OrganizationID:       r.OrganizationID,
@@ -246,69 +367,66 @@ func assetFromCreateResponse(r *api.PostAPIV1OrganizationsOrganizationIDAssetsRe
 		Sku:                  r.Sku,
 		StartURL:             strPtrFromNullable(r.StartURL),
 		MaxRequestsPerSecond: intPtrFromNullable(r.MaxRequestsPerSecond),
-		ApprovedTimeWindows:  convertApprovedTimeWindowsFromCreate(r.ApprovedTimeWindows),
-		Credentials:          convertCredentialsFromCreate(r.Credentials),
-		DNSBoundaryRules:     convertDNSBoundaryRulesFromCreate(r.DNSBoundaryRules),
-		Headers:              convertHeadersFromCreate(r.Headers),
-		HTTPBoundaryRules:    convertHTTPBoundaryRulesFromCreate(r.HTTPBoundaryRules),
-		Checks:               convertChecksFromCreate(r.Checks),
 		ArchiveAt:            timePtrFromNullable(r.ArchiveAt),
 		CreatedAt:            r.CreatedAt,
 		UpdatedAt:            r.UpdatedAt,
 	}
+
+	a.ApprovedTimeWindows = convertApprovedTimeWindows(r.ApprovedTimeWindows)
+	a.Credentials = convertCredentials(r.Credentials)
+	a.DNSBoundaryRules = convertDNSBoundaryRules(r.DNSBoundaryRules)
+	a.Headers = convertHeaders(r.Headers)
+	a.HTTPBoundaryRules = convertHTTPBoundaryRules(r.HTTPBoundaryRules)
+	a.Checks = convertChecks(r.Checks)
+
+	return a
 }
 
-// Conversion helpers for GET response types
-
-func convertApprovedTimeWindowsFromGet(atw api.GetAPIV1AssetsAssetID_Response_ApprovedTimeWindows) *ApprovedTimeWindows {
-	if atw.Tz == "" && len(atw.Entries) == 0 {
+func convertApprovedTimeWindows(raw *rawApprovedTimeWindowsJSON) *ApprovedTimeWindows {
+	if raw == nil || (raw.Tz == "" && len(raw.Entries) == 0) {
 		return nil
 	}
-	entries := make([]TimeWindowEntry, 0, len(atw.Entries))
-	for _, e := range atw.Entries {
+	entries := make([]TimeWindowEntry, 0, len(raw.Entries))
+	for _, e := range raw.Entries {
 		entries = append(entries, TimeWindowEntry{
-			StartWeekday: int(e.StartWeekday),
+			StartWeekday: e.StartWeekday,
 			StartTime:    e.StartTime,
-			EndWeekday:   int(e.EndWeekday),
+			EndWeekday:   e.EndWeekday,
 			EndTime:      e.EndTime,
 		})
 	}
-	return &ApprovedTimeWindows{Tz: atw.Tz, Entries: entries}
+	return &ApprovedTimeWindows{Tz: raw.Tz, Entries: entries}
 }
 
-func convertCredentialsFromGet(creds api.GetAPIV1AssetsAssetID_Response_Credentials) []Credential {
-	if creds == nil {
+func convertCredentials(raw []rawCredentialJSON) []Credential {
+	if raw == nil {
 		return nil
 	}
-	result := make([]Credential, 0, len(creds))
-	for _, c := range creds {
-		cred := Credential{
-			ID:       c.ID,
-			Name:     c.Name,
-			Type:     string(c.Type),
-			Username: c.Username,
-			Password: c.Password,
-		}
-		if c.EmailAddress != nil {
-			email := string(*c.EmailAddress)
-			cred.EmailAddress = &email
-		}
-		cred.AuthenticatorURI = c.AuthenticatorURI
-		result = append(result, cred)
+	result := make([]Credential, 0, len(raw))
+	for _, c := range raw {
+		result = append(result, Credential{
+			ID:               c.ID,
+			Name:             c.Name,
+			Type:             c.Type,
+			Username:         c.Username,
+			Password:         c.Password,
+			EmailAddress:     c.EmailAddress,
+			AuthenticatorURI: c.AuthenticatorURI,
+		})
 	}
 	return result
 }
 
-func convertDNSBoundaryRulesFromGet(rules api.GetAPIV1AssetsAssetID_Response_DNSBoundaryRules) []DNSBoundaryRule {
-	if rules == nil {
+func convertDNSBoundaryRules(raw []rawDNSBoundaryRuleJSON) []DNSBoundaryRule {
+	if raw == nil {
 		return nil
 	}
-	result := make([]DNSBoundaryRule, 0, len(rules))
-	for _, r := range rules {
+	result := make([]DNSBoundaryRule, 0, len(raw))
+	for _, r := range raw {
 		result = append(result, DNSBoundaryRule{
 			ID:                r.ID,
 			Action:            DNSBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
+			Type:              r.Type,
 			Filter:            r.Filter,
 			IncludeSubdomains: r.IncludeSubdomains,
 		})
@@ -316,35 +434,35 @@ func convertDNSBoundaryRulesFromGet(rules api.GetAPIV1AssetsAssetID_Response_DNS
 	return result
 }
 
-func convertHeadersFromGet(headers map[string]api.GetAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties) map[string][]string {
-	if headers == nil {
+func convertHeaders(raw map[string]json.RawMessage) map[string][]string {
+	if raw == nil {
 		return nil
 	}
-	result := make(map[string][]string, len(headers))
-	for k, v := range headers {
-		if v.GetAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties_AnyOf == nil {
+	result := make(map[string][]string, len(raw))
+	for k, v := range raw {
+		var arr []string
+		if json.Unmarshal(v, &arr) == nil {
+			result[k] = arr
 			continue
 		}
-		anyOf := v.GetAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties_AnyOf
-		if anyOf.IsB() {
-			result[k] = []string(anyOf.B)
-		} else if anyOf.IsA() {
-			result[k] = []string{anyOf.A}
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			result[k] = []string{s}
 		}
 	}
 	return result
 }
 
-func convertHTTPBoundaryRulesFromGet(rules api.GetAPIV1AssetsAssetID_Response_HTTPBoundaryRules) []HTTPBoundaryRule {
-	if rules == nil {
+func convertHTTPBoundaryRules(raw []rawHTTPBoundaryRuleJSON) []HTTPBoundaryRule {
+	if raw == nil {
 		return nil
 	}
-	result := make([]HTTPBoundaryRule, 0, len(rules))
-	for _, r := range rules {
+	result := make([]HTTPBoundaryRule, 0, len(raw))
+	for _, r := range raw {
 		result = append(result, HTTPBoundaryRule{
 			ID:                r.ID,
 			Action:            HTTPBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
+			Type:              r.Type,
 			Filter:            r.Filter,
 			IncludeSubdomains: r.IncludeSubdomains,
 		})
@@ -352,361 +470,45 @@ func convertHTTPBoundaryRulesFromGet(rules api.GetAPIV1AssetsAssetID_Response_HT
 	return result
 }
 
-func convertChecksFromGet(checks api.GetAPIV1AssetsAssetID_Response_Checks) *AssetChecks {
+func convertChecks(raw rawChecksJSON) *AssetChecks {
 	return &AssetChecks{
-		AssetReachable: AssetCheck{
-			State:   AssetCheckState(checks.AssetReachable.State),
-			Message: checks.AssetReachable.Message,
-			Error:   convertAssetReachableErrorFromGet(checks.AssetReachable.ErrorData),
-		},
-		Credentials: AssetCheck{
-			State:   AssetCheckState(checks.Credentials.State),
-			Message: checks.Credentials.Message,
-			Error:   convertSimpleErrorFromGet(checks.Credentials.ErrorData.Type),
-		},
-		DNSBoundaryRules: AssetCheck{
-			State:   AssetCheckState(checks.DNSBoundaryRules.State),
-			Message: checks.DNSBoundaryRules.Message,
-			Error:   convertSimpleErrorFromGet(checks.DNSBoundaryRules.ErrorData.Type),
-		},
-		UpdatedAt: timePtrFromNullable(checks.UpdatedAt),
+		AssetReachable:   convertCheck(raw.AssetReachable),
+		Credentials:      convertCheck(raw.Credentials),
+		DNSBoundaryRules: convertCheck(raw.DNSBoundaryRules),
+		UpdatedAt:        timePtrFromNullable(raw.UpdatedAt),
 	}
 }
 
-func convertAssetReachableErrorFromGet(errData api.GetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error) *AssetCheckError {
-	oneOf := errData.GetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf
-	if oneOf == nil {
-		return nil
+func convertCheck(raw rawCheckJSON) AssetCheck {
+	return AssetCheck{
+		State:   AssetCheckState(raw.State),
+		Message: raw.Message,
+		Error:   convertCheckError(raw.Error),
 	}
-
-	// Try each variant (dns, timeout, network, http, waf)
-	if v, err := oneOf.AsGetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_0(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsGetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_1(); err == nil {
-		return &AssetCheckError{Type: string(v.Type)}
-	}
-	if v, err := oneOf.AsGetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_2(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsGetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_3(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Status: int(v.Status)}
-	}
-	if v, err := oneOf.AsGetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_4(); err == nil {
-		result := &AssetCheckError{Type: string(v.Type)}
-		if v.WafProvider != nil {
-			result.WafProvider = string(*v.WafProvider)
-		}
-		return result
-	}
-	return nil
 }
 
-func convertSimpleErrorFromGet(errType string) *AssetCheckError {
-	if errType == "" {
+func convertCheckError(raw json.RawMessage) *AssetCheckError {
+	if len(raw) == 0 || string(raw) == "null" {
 		return nil
 	}
-	return &AssetCheckError{Type: errType}
-}
 
-// Conversion helpers for PUT response types
-
-func convertApprovedTimeWindowsFromPut(atw api.PutAPIV1AssetsAssetID_Response_ApprovedTimeWindows) *ApprovedTimeWindows {
-	if atw.Tz == "" && len(atw.Entries) == 0 {
+	var errJSON rawAssetCheckErrorJSON
+	if err := json.Unmarshal(raw, &errJSON); err != nil {
 		return nil
 	}
-	entries := make([]TimeWindowEntry, 0, len(atw.Entries))
-	for _, e := range atw.Entries {
-		entries = append(entries, TimeWindowEntry{
-			StartWeekday: int(e.StartWeekday),
-			StartTime:    e.StartTime,
-			EndWeekday:   int(e.EndWeekday),
-			EndTime:      e.EndTime,
-		})
-	}
-	return &ApprovedTimeWindows{Tz: atw.Tz, Entries: entries}
-}
-
-func convertCredentialsFromPut(creds api.PutAPIV1AssetsAssetID_Response_Credentials) []Credential {
-	if creds == nil {
+	if errJSON.Type == "" {
 		return nil
 	}
-	result := make([]Credential, 0, len(creds))
-	for _, c := range creds {
-		cred := Credential{
-			ID:       c.ID,
-			Name:     c.Name,
-			Type:     string(c.Type),
-			Username: c.Username,
-			Password: c.Password,
-		}
-		if c.EmailAddress != nil {
-			email := string(*c.EmailAddress)
-			cred.EmailAddress = &email
-		}
-		cred.AuthenticatorURI = c.AuthenticatorURI
-		result = append(result, cred)
+
+	result := &AssetCheckError{
+		Type:   errJSON.Type,
+		Code:   errJSON.Code,
+		Status: errJSON.Status,
+	}
+	if errJSON.WafProvider != nil {
+		result.WafProvider = *errJSON.WafProvider
 	}
 	return result
-}
-
-func convertDNSBoundaryRulesFromPut(rules api.PutAPIV1AssetsAssetID_Response_DNSBoundaryRules) []DNSBoundaryRule {
-	if rules == nil {
-		return nil
-	}
-	result := make([]DNSBoundaryRule, 0, len(rules))
-	for _, r := range rules {
-		result = append(result, DNSBoundaryRule{
-			ID:                r.ID,
-			Action:            DNSBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
-			Filter:            r.Filter,
-			IncludeSubdomains: r.IncludeSubdomains,
-		})
-	}
-	return result
-}
-
-func convertHeadersFromPut(headers map[string]api.PutAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties) map[string][]string {
-	if headers == nil {
-		return nil
-	}
-	result := make(map[string][]string, len(headers))
-	for k, v := range headers {
-		if v.PutAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties_AnyOf == nil {
-			continue
-		}
-		anyOf := v.PutAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties_AnyOf
-		if anyOf.IsB() {
-			result[k] = []string(anyOf.B)
-		} else if anyOf.IsA() {
-			result[k] = []string{anyOf.A}
-		}
-	}
-	return result
-}
-
-func convertHTTPBoundaryRulesFromPut(rules api.PutAPIV1AssetsAssetID_Response_HTTPBoundaryRules) []HTTPBoundaryRule {
-	if rules == nil {
-		return nil
-	}
-	result := make([]HTTPBoundaryRule, 0, len(rules))
-	for _, r := range rules {
-		result = append(result, HTTPBoundaryRule{
-			ID:                r.ID,
-			Action:            HTTPBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
-			Filter:            r.Filter,
-			IncludeSubdomains: r.IncludeSubdomains,
-		})
-	}
-	return result
-}
-
-func convertChecksFromPut(checks api.PutAPIV1AssetsAssetID_Response_Checks) *AssetChecks {
-	return &AssetChecks{
-		AssetReachable: AssetCheck{
-			State:   AssetCheckState(checks.AssetReachable.State),
-			Message: checks.AssetReachable.Message,
-			Error:   convertAssetReachableErrorFromPut(checks.AssetReachable.ErrorData),
-		},
-		Credentials: AssetCheck{
-			State:   AssetCheckState(checks.Credentials.State),
-			Message: checks.Credentials.Message,
-			Error:   convertSimpleErrorFromPut(checks.Credentials.ErrorData.Type),
-		},
-		DNSBoundaryRules: AssetCheck{
-			State:   AssetCheckState(checks.DNSBoundaryRules.State),
-			Message: checks.DNSBoundaryRules.Message,
-			Error:   convertSimpleErrorFromPut(checks.DNSBoundaryRules.ErrorData.Type),
-		},
-		UpdatedAt: timePtrFromNullable(checks.UpdatedAt),
-	}
-}
-
-func convertAssetReachableErrorFromPut(errData api.PutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error) *AssetCheckError {
-	oneOf := errData.PutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf
-	if oneOf == nil {
-		return nil
-	}
-
-	if v, err := oneOf.AsPutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_0(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsPutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_1(); err == nil {
-		return &AssetCheckError{Type: string(v.Type)}
-	}
-	if v, err := oneOf.AsPutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_2(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsPutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_3(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Status: int(v.Status)}
-	}
-	if v, err := oneOf.AsPutAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error_AnyOf_OneOf_4(); err == nil {
-		result := &AssetCheckError{Type: string(v.Type)}
-		if v.WafProvider != nil {
-			result.WafProvider = string(*v.WafProvider)
-		}
-		return result
-	}
-	return nil
-}
-
-func convertSimpleErrorFromPut(errType string) *AssetCheckError {
-	if errType == "" {
-		return nil
-	}
-	return &AssetCheckError{Type: errType}
-}
-
-// Conversion helpers for POST (create) response types
-
-func convertApprovedTimeWindowsFromCreate(atw api.PostAPIV1OrganizationsOrganizationIDAssets_Response_ApprovedTimeWindows) *ApprovedTimeWindows {
-	if atw.Tz == "" && len(atw.Entries) == 0 {
-		return nil
-	}
-	entries := make([]TimeWindowEntry, 0, len(atw.Entries))
-	for _, e := range atw.Entries {
-		entries = append(entries, TimeWindowEntry{
-			StartWeekday: int(e.StartWeekday),
-			StartTime:    e.StartTime,
-			EndWeekday:   int(e.EndWeekday),
-			EndTime:      e.EndTime,
-		})
-	}
-	return &ApprovedTimeWindows{Tz: atw.Tz, Entries: entries}
-}
-
-func convertCredentialsFromCreate(creds api.PostAPIV1OrganizationsOrganizationIDAssets_Response_Credentials) []Credential {
-	if creds == nil {
-		return nil
-	}
-	result := make([]Credential, 0, len(creds))
-	for _, c := range creds {
-		cred := Credential{
-			ID:       c.ID,
-			Name:     c.Name,
-			Type:     string(c.Type),
-			Username: c.Username,
-			Password: c.Password,
-		}
-		if c.EmailAddress != nil {
-			email := string(*c.EmailAddress)
-			cred.EmailAddress = &email
-		}
-		cred.AuthenticatorURI = c.AuthenticatorURI
-		result = append(result, cred)
-	}
-	return result
-}
-
-func convertDNSBoundaryRulesFromCreate(rules api.PostAPIV1OrganizationsOrganizationIDAssets_Response_DNSBoundaryRules) []DNSBoundaryRule {
-	if rules == nil {
-		return nil
-	}
-	result := make([]DNSBoundaryRule, 0, len(rules))
-	for _, r := range rules {
-		result = append(result, DNSBoundaryRule{
-			ID:                r.ID,
-			Action:            DNSBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
-			Filter:            r.Filter,
-			IncludeSubdomains: r.IncludeSubdomains,
-		})
-	}
-	return result
-}
-
-func convertHeadersFromCreate(headers map[string]api.PostAPIV1OrganizationsOrganizationIDAssets_Response_Headers_AnyOf_AdditionalProperties) map[string][]string {
-	if headers == nil {
-		return nil
-	}
-	result := make(map[string][]string, len(headers))
-	for k, v := range headers {
-		if v.PostAPIV1OrganizationsOrganizationIDAssets_Response_Headers_AnyOf_AdditionalProperties_AnyOf == nil {
-			continue
-		}
-		anyOf := v.PostAPIV1OrganizationsOrganizationIDAssets_Response_Headers_AnyOf_AdditionalProperties_AnyOf
-		if anyOf.IsB() {
-			result[k] = []string(anyOf.B)
-		} else if anyOf.IsA() {
-			result[k] = []string{anyOf.A}
-		}
-	}
-	return result
-}
-
-func convertHTTPBoundaryRulesFromCreate(rules api.PostAPIV1OrganizationsOrganizationIDAssets_Response_HTTPBoundaryRules) []HTTPBoundaryRule {
-	if rules == nil {
-		return nil
-	}
-	result := make([]HTTPBoundaryRule, 0, len(rules))
-	for _, r := range rules {
-		result = append(result, HTTPBoundaryRule{
-			ID:                r.ID,
-			Action:            HTTPBoundaryRuleAction(r.Action),
-			Type:              string(r.Type),
-			Filter:            r.Filter,
-			IncludeSubdomains: r.IncludeSubdomains,
-		})
-	}
-	return result
-}
-
-func convertChecksFromCreate(checks api.PostAPIV1OrganizationsOrganizationIDAssets_Response_Checks) *AssetChecks {
-	return &AssetChecks{
-		AssetReachable: AssetCheck{
-			State:   AssetCheckState(checks.AssetReachable.State),
-			Message: checks.AssetReachable.Message,
-			Error:   convertAssetReachableErrorFromCreate(checks.AssetReachable.ErrorData),
-		},
-		Credentials: AssetCheck{
-			State:   AssetCheckState(checks.Credentials.State),
-			Message: checks.Credentials.Message,
-			Error:   convertSimpleErrorFromCreate(checks.Credentials.ErrorData.Type),
-		},
-		DNSBoundaryRules: AssetCheck{
-			State:   AssetCheckState(checks.DNSBoundaryRules.State),
-			Message: checks.DNSBoundaryRules.Message,
-			Error:   convertSimpleErrorFromCreate(checks.DNSBoundaryRules.ErrorData.Type),
-		},
-		UpdatedAt: timePtrFromNullable(checks.UpdatedAt),
-	}
-}
-
-func convertAssetReachableErrorFromCreate(errData api.PostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error) *AssetCheckError {
-	oneOf := errData.PostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf
-	if oneOf == nil {
-		return nil
-	}
-
-	if v, err := oneOf.AsPostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf_0(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsPostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf_1(); err == nil {
-		return &AssetCheckError{Type: string(v.Type)}
-	}
-	if v, err := oneOf.AsPostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf_2(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Code: v.Code}
-	}
-	if v, err := oneOf.AsPostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf_3(); err == nil {
-		return &AssetCheckError{Type: string(v.Type), Status: int(v.Status)}
-	}
-	if v, err := oneOf.AsPostAPIV1OrganizationsOrganizationIDAssets_Response_Checks_AssetReachable_Error_AnyOf_OneOf_4(); err == nil {
-		result := &AssetCheckError{Type: string(v.Type)}
-		if v.WafProvider != nil {
-			result.WafProvider = string(*v.WafProvider)
-		}
-		return result
-	}
-	return nil
-}
-
-func convertSimpleErrorFromCreate(errType string) *AssetCheckError {
-	if errType == "" {
-		return nil
-	}
-	return &AssetCheckError{Type: errType}
 }
 
 // Conversion helpers for request body types (domain -> generated)
