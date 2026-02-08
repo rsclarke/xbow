@@ -243,6 +243,45 @@ func main() {
 }
 ```
 
+### Webhook Verification
+
+Verify incoming webhook requests using Ed25519 signatures. Fetch the signing keys from the API, then create a verifier:
+
+```go
+keys, err := client.Meta.GetWebhookSigningKeys(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+verifier, err := xbow.NewWebhookVerifier(keys)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+Use it as HTTP middleware, which returns `401 Unauthorized` for invalid signatures:
+
+```go
+http.Handle("/webhook", verifier.Middleware(myHandler))
+```
+
+Or verify requests manually:
+
+```go
+if err := verifier.Verify(r); err != nil {
+    // handle invalid signature
+}
+```
+
+Options can be passed to `NewWebhookVerifier` to adjust clock skew tolerance (default 5 minutes) and maximum body size (default 5 MB):
+
+```go
+verifier, err := xbow.NewWebhookVerifier(keys,
+    xbow.WithMaxClockSkew(10*time.Minute),
+    xbow.WithMaxBodyBytes(10*1024*1024), // 10 MB
+)
+```
+
 ## Authentication
 
 The XBOW API uses two types of API keys:
