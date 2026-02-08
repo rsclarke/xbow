@@ -2,6 +2,7 @@ package xbow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -201,11 +202,11 @@ func TestAssetsPageFromResponse(t *testing.T) {
 	})
 }
 
-func TestConvertApprovedTimeWindowsFromGet(t *testing.T) {
+func TestConvertApprovedTimeWindows(t *testing.T) {
 	t.Run("converts time windows", func(t *testing.T) {
-		atw := api.GetAPIV1AssetsAssetID_Response_ApprovedTimeWindows{
+		atw := &rawApprovedTimeWindowsJSON{
 			Tz: "Europe/London",
-			Entries: api.GetAPIV1AssetsAssetID_Response_ApprovedTimeWindows_AnyOf_Entries{
+			Entries: []rawTimeWindowJSON{
 				{
 					StartWeekday: 1,
 					StartTime:    "09:00",
@@ -215,7 +216,7 @@ func TestConvertApprovedTimeWindowsFromGet(t *testing.T) {
 			},
 		}
 
-		got := convertApprovedTimeWindowsFromGet(atw)
+		got := convertApprovedTimeWindows(atw)
 
 		if got == nil {
 			t.Fatal("expected non-nil result")
@@ -234,10 +235,18 @@ func TestConvertApprovedTimeWindowsFromGet(t *testing.T) {
 		}
 	})
 
-	t.Run("returns nil for empty", func(t *testing.T) {
-		atw := api.GetAPIV1AssetsAssetID_Response_ApprovedTimeWindows{}
+	t.Run("returns nil for nil", func(t *testing.T) {
+		got := convertApprovedTimeWindows(nil)
 
-		got := convertApprovedTimeWindowsFromGet(atw)
+		if got != nil {
+			t.Errorf("expected nil, got %+v", got)
+		}
+	})
+
+	t.Run("returns nil for empty", func(t *testing.T) {
+		atw := &rawApprovedTimeWindowsJSON{}
+
+		got := convertApprovedTimeWindows(atw)
 
 		if got != nil {
 			t.Errorf("expected nil, got %+v", got)
@@ -245,21 +254,21 @@ func TestConvertApprovedTimeWindowsFromGet(t *testing.T) {
 	})
 }
 
-func TestConvertCredentialsFromGet(t *testing.T) {
+func TestConvertCredentials(t *testing.T) {
 	t.Run("converts credentials with all fields", func(t *testing.T) {
 		authURI := "otpauth://totp/test"
-		creds := api.GetAPIV1AssetsAssetID_Response_Credentials{
+		creds := []rawCredentialJSON{
 			{
 				ID:               "cred-1",
 				Name:             "Test Cred",
-				Type:             api.UsernamePassword,
+				Type:             "username-password",
 				Username:         "testuser",
 				Password:         "testpass",
 				AuthenticatorURI: &authURI,
 			},
 		}
 
-		got := convertCredentialsFromGet(creds)
+		got := convertCredentials(creds)
 
 		if len(got) != 1 {
 			t.Fatalf("got %d credentials, want 1", len(got))
@@ -279,17 +288,17 @@ func TestConvertCredentialsFromGet(t *testing.T) {
 	})
 
 	t.Run("handles nil optional fields", func(t *testing.T) {
-		creds := api.GetAPIV1AssetsAssetID_Response_Credentials{
+		creds := []rawCredentialJSON{
 			{
 				ID:       "cred-2",
 				Name:     "Basic Cred",
-				Type:     api.UsernamePassword,
+				Type:     "username-password",
 				Username: "user",
 				Password: "pass",
 			},
 		}
 
-		got := convertCredentialsFromGet(creds)
+		got := convertCredentials(creds)
 
 		if got[0].EmailAddress != nil {
 			t.Errorf("EmailAddress = %v, want nil", got[0].EmailAddress)
@@ -300,19 +309,19 @@ func TestConvertCredentialsFromGet(t *testing.T) {
 	})
 }
 
-func TestConvertDNSBoundaryRulesFromGet(t *testing.T) {
+func TestConvertDNSBoundaryRules(t *testing.T) {
 	includeSubdomains := true
-	rules := api.GetAPIV1AssetsAssetID_Response_DNSBoundaryRules{
+	rules := []rawDNSBoundaryRuleJSON{
 		{
 			ID:                "rule-1",
-			Action:            api.AllowVisit,
-			Type:              api.Glob,
+			Action:            "allow-visit",
+			Type:              "glob",
 			Filter:            "*.example.com",
 			IncludeSubdomains: &includeSubdomains,
 		},
 	}
 
-	got := convertDNSBoundaryRulesFromGet(rules)
+	got := convertDNSBoundaryRules(rules)
 
 	if len(got) != 1 {
 		t.Fatalf("got %d rules, want 1", len(got))
@@ -331,17 +340,17 @@ func TestConvertDNSBoundaryRulesFromGet(t *testing.T) {
 	}
 }
 
-func TestConvertHTTPBoundaryRulesFromGet(t *testing.T) {
-	rules := api.GetAPIV1AssetsAssetID_Response_HTTPBoundaryRules{
+func TestConvertHTTPBoundaryRules(t *testing.T) {
+	rules := []rawHTTPBoundaryRuleJSON{
 		{
 			ID:     "http-rule-1",
-			Action: api.GetAPIV1AssetsAssetIDResponseHTTPBoundaryRulesAnyOfActionDeny,
-			Type:   api.Exact,
+			Action: "deny",
+			Type:   "exact",
 			Filter: "https://blocked.example.com",
 		},
 	}
 
-	got := convertHTTPBoundaryRulesFromGet(rules)
+	got := convertHTTPBoundaryRules(rules)
 
 	if len(got) != 1 {
 		t.Fatalf("got %d rules, want 1", len(got))
@@ -354,46 +363,58 @@ func TestConvertHTTPBoundaryRulesFromGet(t *testing.T) {
 	}
 }
 
-func TestConvertHeadersFromGet(t *testing.T) {
-	t.Run("skips nil anyOf", func(t *testing.T) {
-		headers := map[string]api.GetAPIV1AssetsAssetID_Response_Headers_AnyOf_AdditionalProperties{
-			"X-Nil": {},
+func TestConvertHeaders(t *testing.T) {
+	t.Run("converts single string value", func(t *testing.T) {
+		headers := map[string]json.RawMessage{
+			"X-Single": json.RawMessage(`"value1"`),
 		}
 
-		got := convertHeadersFromGet(headers)
+		got := convertHeaders(headers)
 
-		if _, exists := got["X-Nil"]; exists {
-			t.Errorf("expected X-Nil to be skipped")
+		if got["X-Single"] == nil || len(got["X-Single"]) != 1 || got["X-Single"][0] != "value1" {
+			t.Errorf("X-Single = %v, want [value1]", got["X-Single"])
 		}
 	})
 
-	t.Run("returns nil for empty", func(t *testing.T) {
-		got := convertHeadersFromGet(nil)
+	t.Run("converts array value", func(t *testing.T) {
+		headers := map[string]json.RawMessage{
+			"X-Multi": json.RawMessage(`["val1","val2"]`),
+		}
+
+		got := convertHeaders(headers)
+
+		if len(got["X-Multi"]) != 2 || got["X-Multi"][0] != "val1" || got["X-Multi"][1] != "val2" {
+			t.Errorf("X-Multi = %v, want [val1 val2]", got["X-Multi"])
+		}
+	})
+
+	t.Run("returns nil for nil", func(t *testing.T) {
+		got := convertHeaders(nil)
 		if got != nil {
 			t.Errorf("expected nil, got %v", got)
 		}
 	})
 }
 
-func TestConvertChecksFromGet(t *testing.T) {
+func TestConvertChecks(t *testing.T) {
 	now := time.Now().Truncate(time.Second)
-	checks := api.GetAPIV1AssetsAssetID_Response_Checks{
-		AssetReachable: api.GetAPIV1AssetsAssetID_Response_Checks_AssetReachable{
-			State:   api.Valid,
+	checks := rawChecksJSON{
+		AssetReachable: rawCheckJSON{
+			State:   "valid",
 			Message: "Asset is reachable",
 		},
-		Credentials: api.GetAPIV1AssetsAssetID_Response_Checks_Credentials{
-			State:   api.GetAPIV1AssetsAssetIDResponseChecksCredentialsStateChecking,
+		Credentials: rawCheckJSON{
+			State:   "checking",
 			Message: "Validating credentials",
 		},
-		DNSBoundaryRules: api.GetAPIV1AssetsAssetID_Response_Checks_DNSBoundaryRules{
-			State:   api.GetAPIV1AssetsAssetIDResponseChecksDNSBoundaryRulesStateUnchecked,
+		DNSBoundaryRules: rawCheckJSON{
+			State:   "unchecked",
 			Message: "",
 		},
 		UpdatedAt: now,
 	}
 
-	got := convertChecksFromGet(checks)
+	got := convertChecks(checks)
 
 	if got.AssetReachable.State != AssetCheckStateValid {
 		t.Errorf("AssetReachable.State = %q, want %q", got.AssetReachable.State, AssetCheckStateValid)
@@ -724,16 +745,30 @@ func TestCreateAssetNilRequest(t *testing.T) {
 	}
 }
 
-func TestConvertSimpleErrorFromGet(t *testing.T) {
-	t.Run("returns nil for empty type", func(t *testing.T) {
-		got := convertSimpleErrorFromGet("")
+func TestConvertCheckError(t *testing.T) {
+	t.Run("returns nil for nil input", func(t *testing.T) {
+		got := convertCheckError(nil)
 		if got != nil {
 			t.Errorf("expected nil, got %+v", got)
 		}
 	})
 
-	t.Run("returns error for non-empty type", func(t *testing.T) {
-		got := convertSimpleErrorFromGet("invalid-credentials")
+	t.Run("returns nil for null JSON", func(t *testing.T) {
+		got := convertCheckError(json.RawMessage(`null`))
+		if got != nil {
+			t.Errorf("expected nil, got %+v", got)
+		}
+	})
+
+	t.Run("returns nil for empty type", func(t *testing.T) {
+		got := convertCheckError(json.RawMessage(`{"type":""}`))
+		if got != nil {
+			t.Errorf("expected nil, got %+v", got)
+		}
+	})
+
+	t.Run("returns error for simple type", func(t *testing.T) {
+		got := convertCheckError(json.RawMessage(`{"type":"invalid-credentials"}`))
 		if got == nil {
 			t.Fatal("expected non-nil error")
 		}
@@ -741,14 +776,20 @@ func TestConvertSimpleErrorFromGet(t *testing.T) {
 			t.Errorf("Type = %q, want 'invalid-credentials'", got.Type)
 		}
 	})
-}
 
-func TestConvertAssetReachableErrorFromGet(t *testing.T) {
-	t.Run("returns nil when oneOf is nil", func(t *testing.T) {
-		errData := api.GetAPIV1AssetsAssetID_Response_Checks_AssetReachable_Error{}
-		got := convertAssetReachableErrorFromGet(errData)
-		if got != nil {
-			t.Errorf("expected nil, got %+v", got)
+	t.Run("returns error with all fields", func(t *testing.T) {
+		got := convertCheckError(json.RawMessage(`{"type":"waf-detected","code":"403","status":403,"wafProvider":"cloudflare"}`))
+		if got == nil {
+			t.Fatal("expected non-nil error")
+		}
+		if got.Type != "waf-detected" {
+			t.Errorf("Type = %q, want 'waf-detected'", got.Type)
+		}
+		if got.Status != 403 {
+			t.Errorf("Status = %d, want 403", got.Status)
+		}
+		if got.WafProvider != "cloudflare" {
+			t.Errorf("WafProvider = %q, want 'cloudflare'", got.WafProvider)
 		}
 	})
 }
