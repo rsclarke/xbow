@@ -19,10 +19,13 @@ const (
 	HeaderSignatureEd25519 = "X-Signature-Ed25519"
 )
 
+const defaultMaxBodyBytes = 5 * 1024 * 1024 // 5 MB
+
 // WebhookVerifier verifies webhook signatures from XBOW.
 type WebhookVerifier struct {
 	publicKeys   []ed25519.PublicKey
 	maxClockSkew time.Duration
+	maxBodyBytes int64
 }
 
 // WebhookVerifierOption configures the WebhookVerifier.
@@ -33,6 +36,14 @@ type WebhookVerifierOption func(*WebhookVerifier)
 func WithMaxClockSkew(d time.Duration) WebhookVerifierOption {
 	return func(v *WebhookVerifier) {
 		v.maxClockSkew = d
+	}
+}
+
+// WithMaxBodyBytes sets the maximum allowed request body size in bytes.
+// Default is 5 MB. Requests with bodies exceeding this limit will be rejected.
+func WithMaxBodyBytes(n int64) WebhookVerifierOption {
+	return func(v *WebhookVerifier) {
+		v.maxBodyBytes = n
 	}
 }
 
@@ -58,6 +69,7 @@ func NewWebhookVerifier(keys []WebhookSigningKey, opts ...WebhookVerifierOption)
 	v := &WebhookVerifier{
 		publicKeys:   make([]ed25519.PublicKey, 0, len(keys)),
 		maxClockSkew: 5 * time.Minute,
+		maxBodyBytes: defaultMaxBodyBytes,
 	}
 
 	for _, opt := range opts {
@@ -139,10 +151,17 @@ func (v *WebhookVerifier) Verify(r *http.Request) error {
 	if err != nil {
 		return &Error{Code: "ERR_INVALID_SIGNATURE", Message: "invalid signature hex encoding"}
 	}
+	if len(sig) != ed25519.SignatureSize {
+		return &Error{Code: "ERR_INVALID_SIGNATURE", Message: "invalid signature length"}
+	}
 
-	body, err := io.ReadAll(r.Body)
+	lr := io.LimitReader(r.Body, v.maxBodyBytes+1)
+	body, err := io.ReadAll(lr)
 	if err != nil {
 		return &Error{Code: "ERR_READ_BODY", Message: "failed to read request body"}
+	}
+	if int64(len(body)) > v.maxBodyBytes {
+		return &Error{Code: "ERR_BODY_TOO_LARGE", Message: "request body exceeds maximum allowed size"}
 	}
 	r.Body = io.NopCloser(bytes.NewReader(body))
 
