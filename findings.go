@@ -160,47 +160,13 @@ func assessmentFromVerifyFixResponse(r *api.PostAPIV1FindingsFindingIDVerifyFixR
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromVerifyFix(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_Item) rawUnion {
+			if e.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
-}
-
-func convertRecentEventsFromVerifyFix(events api.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf == nil {
-			continue
-		}
-		oneOf := e.PostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf
-
-		// Try paused event
-		if v, err := oneOf.AsPostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-
-		// Try auto-paused event (with reason)
-		if v, err := oneOf.AsPostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		// Try resumed event
-		if v, err := oneOf.AsPostAPIV1FindingsFindingIDVerifyFix_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-	}
-	return result
 }
