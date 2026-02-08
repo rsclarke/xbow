@@ -337,6 +337,45 @@ client, _ := xbow.NewClient(
 
 The `RateLimiter` interface requires only a `Wait(context.Context) error` method, so you can provide any custom implementation.
 
+## Retry Policy
+
+Enable automatic retries with exponential backoff for transient failures (429, 5xx):
+
+```go
+client, _ := xbow.NewClient(
+    xbow.WithOrganizationKey("your-org-key"),
+    xbow.WithRetryPolicy(&xbow.RetryPolicy{
+        MaxAttempts:    4,
+        InitialBackoff: time.Second,
+    }),
+)
+```
+
+By default, only idempotent methods (GET, HEAD, PUT, DELETE) are retried. To also retry POST requests:
+
+```go
+xbow.WithRetryPolicy(&xbow.RetryPolicy{
+    RetryPOST: true,
+})
+```
+
+The retry policy uses exponential backoff with jitter (enabled by default). All defaults:
+
+| Field | Default |
+|-------|---------|
+| `MaxAttempts` | 3 |
+| `InitialBackoff` | 500ms |
+| `MaxBackoff` | 30s |
+| `Jitter` | true |
+| `RetryableStatusCodes` | 429, 500, 502, 503, 504 |
+| `RetryPOST` | false |
+
+When combined with a rate limiter, the rate limiter runs once per user-initiated request while the retry transport handles individual attempts:
+
+```
+HTTP Client → RateLimiter → RetryTransport → Base Transport
+```
+
 ## Pagination
 
 List methods return a single page. Use `All*` methods for automatic pagination:
