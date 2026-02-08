@@ -73,6 +73,7 @@ type clientConfig struct {
 	orgKey         string
 	integrationKey string
 	rateLimiter    RateLimiter
+	retryPolicy    *RetryPolicy
 }
 
 // WithBaseURL sets a custom base URL.
@@ -148,20 +149,31 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 		opt(cfg)
 	}
 
-	// Wrap HTTP client with rate limiter if configured
-	if cfg.rateLimiter != nil {
+	// Wrap HTTP transport with retry and rate limit transports.
+	// Layering: HTTP Client → rateLimitTransport → retryTransport → base transport
+	if cfg.retryPolicy != nil || cfg.rateLimiter != nil {
 		transport := cfg.httpClient.Transport
 		if transport == nil {
 			transport = http.DefaultTransport
 		}
-		rateLimitedClient := &http.Client{
-			Transport:     &rateLimitTransport{base: transport, limiter: cfg.rateLimiter},
+
+		if cfg.retryPolicy != nil {
+			cfg.retryPolicy.defaults()
+			transport = &retryTransport{base: transport, policy: *cfg.retryPolicy}
+		}
+
+		if cfg.rateLimiter != nil {
+			transport = &rateLimitTransport{base: transport, limiter: cfg.rateLimiter}
+		}
+
+		wrappedClient := &http.Client{
+			Transport:     transport,
 			CheckRedirect: cfg.httpClient.CheckRedirect,
 			Jar:           cfg.httpClient.Jar,
 			Timeout:       cfg.httpClient.Timeout,
 		}
-		cfg.httpClient = rateLimitedClient
-		cfg.apiClientOpts = append(cfg.apiClientOpts, runtime.WithHTTPClient(&httpClientWrapper{client: rateLimitedClient}))
+		cfg.httpClient = wrappedClient
+		cfg.apiClientOpts = append(cfg.apiClientOpts, runtime.WithHTTPClient(&httpClientWrapper{client: wrappedClient}))
 	}
 
 	raw, err := api.NewDefaultClient(cfg.baseURL, cfg.apiClientOpts...)
