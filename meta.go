@@ -26,7 +26,7 @@ func (s *MetaService) GetOpenAPISpec(ctx context.Context) ([]byte, error) {
 		return nil, err
 	}
 
-	_, body, err := s.client.do(ctx, http.MethodGet, "/api/v1/meta/openapi.json", auth)
+	body, err := s.client.do(ctx, http.MethodGet, "/api/v1/meta/openapi.json", auth)
 	if err != nil {
 		return nil, err
 	}

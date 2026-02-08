@@ -23,7 +23,7 @@ func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
 	}
 
 	path := fmt.Sprintf("/api/v1/reports/%s", id)
-	_, body, err := s.client.do(ctx, http.MethodGet, path, auth)
+	body, err := s.client.do(ctx, http.MethodGet, path, auth)
 	if err != nil {
 		return nil, err
 	}

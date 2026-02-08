@@ -235,33 +235,33 @@ func (c *Client) orgOrIntegrationAuthEditor() (runtime.RequestEditorFn, error) {
 // It returns the response and body bytes. Non-2xx responses are returned as a
 // properly structured *Error with StatusCode set, so that errors.Is works with
 // sentinel errors like ErrNotFound.
-func (c *Client) do(ctx context.Context, method, path string, auth runtime.RequestEditorFn) (*http.Response, []byte, error) {
+func (c *Client) do(ctx context.Context, method, path string, auth runtime.RequestEditorFn) ([]byte, error) {
 	url := c.baseURL + path
 
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("creating request: %w", err)
+		return nil, fmt.Errorf("creating request: %w", err)
 	}
 
 	if err := auth(ctx, req); err != nil {
-		return nil, nil, fmt.Errorf("applying auth: %w", err)
+		return nil, fmt.Errorf("applying auth: %w", err)
 	}
 	req.Header.Set("X-XBOW-API-Version", APIVersion)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("executing request: %w", err)
+		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("reading response: %w", err)
+		return nil, fmt.Errorf("reading response: %w", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return resp, body, wrapRawError(resp.StatusCode, body)
+		return nil, wrapRawError(resp.StatusCode, body)
 	}
 
-	return resp, body, nil
+	return body, nil
 }
