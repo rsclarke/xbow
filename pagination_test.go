@@ -126,6 +126,71 @@ func TestPaginate(t *testing.T) {
 		}
 	})
 
+	t.Run("errors when HasMore is true but cursor is nil", func(t *testing.T) {
+		fetch := func(ctx context.Context, opts *ListOptions) (*Page[string], error) {
+			return &Page[string]{
+				Items:    []string{"a"},
+				PageInfo: PageInfo{HasMore: true, NextCursor: nil},
+			}, nil
+		}
+
+		got, err := Collect(paginate(context.Background(), nil, fetch))
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "xbow: server indicated more pages but returned no cursor" {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("got %d items before error, want 1", len(got))
+		}
+	})
+
+	t.Run("errors when HasMore is true but cursor is empty", func(t *testing.T) {
+		fetch := func(ctx context.Context, opts *ListOptions) (*Page[string], error) {
+			return &Page[string]{
+				Items:    []string{"a"},
+				PageInfo: PageInfo{HasMore: true, NextCursor: ptr("")},
+			}, nil
+		}
+
+		got, err := Collect(paginate(context.Background(), nil, fetch))
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "xbow: server indicated more pages but returned no cursor" {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("got %d items before error, want 1", len(got))
+		}
+	})
+
+	t.Run("errors when cursor does not advance", func(t *testing.T) {
+		callCount := 0
+		fetch := func(ctx context.Context, opts *ListOptions) (*Page[string], error) {
+			callCount++
+			return &Page[string]{
+				Items:    []string{"a"},
+				PageInfo: PageInfo{HasMore: true, NextCursor: ptr("same-cursor")},
+			}, nil
+		}
+
+		got, err := Collect(paginate(context.Background(), &ListOptions{After: "same-cursor"}, fetch))
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if err.Error() != "xbow: server returned same cursor, stopping to prevent infinite loop" {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("fetch called %d times, want 1", callCount)
+		}
+		if len(got) != 1 {
+			t.Errorf("got %d items before error, want 1", len(got))
+		}
+	})
+
 	t.Run("handles empty page", func(t *testing.T) {
 		fetch := func(ctx context.Context, opts *ListOptions) (*Page[string], error) {
 			return &Page[string]{Items: []string{}, PageInfo: PageInfo{HasMore: false}}, nil

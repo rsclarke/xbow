@@ -2,6 +2,7 @@ package xbow
 
 import (
 	"context"
+	"fmt"
 	"iter"
 )
 
@@ -29,6 +30,8 @@ type listFunc[T any] func(ctx context.Context, opts *ListOptions) (*Page[T], err
 // paginate creates an iterator that automatically handles pagination.
 func paginate[T any](ctx context.Context, opts *ListOptions, fetch listFunc[T]) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
+		var zero T
+
 		cursor := ""
 		if opts != nil {
 			cursor = opts.After
@@ -47,7 +50,6 @@ func paginate[T any](ctx context.Context, opts *ListOptions, fetch listFunc[T]) 
 
 			page, err := fetch(ctx, pageOpts)
 			if err != nil {
-				var zero T
 				yield(zero, err)
 				return
 			}
@@ -62,9 +64,15 @@ func paginate[T any](ctx context.Context, opts *ListOptions, fetch listFunc[T]) 
 				return
 			}
 
-			if page.PageInfo.NextCursor != nil {
-				cursor = *page.PageInfo.NextCursor
+			if page.PageInfo.NextCursor == nil || *page.PageInfo.NextCursor == "" {
+				yield(zero, fmt.Errorf("xbow: server indicated more pages but returned no cursor"))
+				return
 			}
+			if *page.PageInfo.NextCursor == cursor {
+				yield(zero, fmt.Errorf("xbow: server returned same cursor, stopping to prevent infinite loop"))
+				return
+			}
+			cursor = *page.PageInfo.NextCursor
 		}
 	}
 }
