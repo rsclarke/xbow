@@ -2,6 +2,7 @@ package xbow
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
 
 	"github.com/rsclarke/xbow/internal/api"
@@ -318,9 +319,14 @@ func webhookFromGetResponse(r *api.GetAPIV1WebhooksWebhookIDResponse) *Webhook {
 		ID:         r.ID,
 		APIVersion: WebhookAPIVersion(r.APIVersion),
 		TargetURL:  r.TargetURL,
-		Events:     convertEventsFromGet(r.Events),
-		CreatedAt:  r.CreatedAt,
-		UpdatedAt:  r.UpdatedAt,
+		Events: convertWebhookEvents(r.Events, func(e api.GetAPIV1WebhooksWebhookID_Response_Events_Item) rawUnion {
+			if e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf == nil {
+				return nil
+			}
+			return e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -329,9 +335,14 @@ func webhookFromPatchResponse(r *api.PatchAPIV1WebhooksWebhookIDResponse) *Webho
 		ID:         r.ID,
 		APIVersion: WebhookAPIVersion(r.APIVersion),
 		TargetURL:  r.TargetURL,
-		Events:     convertEventsFromPatch(r.Events),
-		CreatedAt:  r.CreatedAt,
-		UpdatedAt:  r.UpdatedAt,
+		Events: convertWebhookEvents(r.Events, func(e api.PatchAPIV1WebhooksWebhookID_Response_Events_Item) rawUnion {
+			if e.PatchAPIV1WebhooksWebhookID_Response_Events_AnyOf == nil {
+				return nil
+			}
+			return e.PatchAPIV1WebhooksWebhookID_Response_Events_AnyOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -340,9 +351,14 @@ func webhookFromCreateResponse(r *api.PostAPIV1OrganizationsOrganizationIDWebhoo
 		ID:         r.ID,
 		APIVersion: WebhookAPIVersion(r.APIVersion),
 		TargetURL:  r.TargetURL,
-		Events:     convertEventsFromCreate(r.Events),
-		CreatedAt:  r.CreatedAt,
-		UpdatedAt:  r.UpdatedAt,
+		Events: convertWebhookEvents(r.Events, func(e api.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events_Item) rawUnion {
+			if e.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events_AnyOf == nil {
+				return nil
+			}
+			return e.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events_AnyOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -353,9 +369,14 @@ func webhooksPageFromResponse(r *api.GetAPIV1OrganizationsOrganizationIDWebhooks
 			ID:         item.ID,
 			APIVersion: WebhookAPIVersion(item.APIVersion),
 			TargetURL:  item.TargetURL,
-			Events:     convertEventsFromList(item.Events),
-			CreatedAt:  item.CreatedAt,
-			UpdatedAt:  item.UpdatedAt,
+			Events: convertWebhookEvents(item.Events, func(e api.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events_Item) rawUnion {
+				if e.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events_AnyOf == nil {
+					return nil
+				}
+				return e.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events_AnyOf
+			}),
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
 		})
 	}
 
@@ -396,56 +417,20 @@ func deliveriesPageFromResponse(r *api.GetAPIV1WebhooksWebhookIDDeliveriesRespon
 	}
 }
 
-// Event conversion helpers for different response types
-
-func convertEventsFromGet(events api.GetAPIV1WebhooksWebhookID_Response_Events) []WebhookEventType {
-	result := make([]WebhookEventType, 0, len(events))
-	for _, e := range events {
-		if e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf == nil {
+// convertWebhookEvents is a generic adapter that converts webhook event items
+// from any generated response type into domain WebhookEventType values.
+func convertWebhookEvents[Item any](items []Item, getAnyOf func(Item) rawUnion) []WebhookEventType {
+	result := make([]WebhookEventType, 0, len(items))
+	for _, item := range items {
+		anyOf := getAnyOf(item)
+		if anyOf == nil {
 			continue
 		}
-		if s, err := e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf.AsString(); err == nil {
-			result = append(result, WebhookEventType(s))
-		}
-	}
-	return result
-}
-
-func convertEventsFromPatch(events api.PatchAPIV1WebhooksWebhookID_Response_Events) []WebhookEventType {
-	result := make([]WebhookEventType, 0, len(events))
-	for _, e := range events {
-		if e.PatchAPIV1WebhooksWebhookID_Response_Events_AnyOf == nil {
+		var s string
+		if err := json.Unmarshal(anyOf.Raw(), &s); err != nil {
 			continue
 		}
-		if s, err := e.PatchAPIV1WebhooksWebhookID_Response_Events_AnyOf.AsString(); err == nil {
-			result = append(result, WebhookEventType(s))
-		}
-	}
-	return result
-}
-
-func convertEventsFromCreate(events api.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events) []WebhookEventType {
-	result := make([]WebhookEventType, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events_AnyOf == nil {
-			continue
-		}
-		if s, err := e.PostAPIV1OrganizationsOrganizationIDWebhooks_Response_Events_AnyOf.AsString(); err == nil {
-			result = append(result, WebhookEventType(s))
-		}
-	}
-	return result
-}
-
-func convertEventsFromList(events api.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events) []WebhookEventType {
-	result := make([]WebhookEventType, 0, len(events))
-	for _, e := range events {
-		if e.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events_AnyOf == nil {
-			continue
-		}
-		if s, err := e.GetAPIV1OrganizationsOrganizationIDWebhooks_Response_Items_Events_AnyOf.AsString(); err == nil {
-			result = append(result, WebhookEventType(s))
-		}
+		result = append(result, WebhookEventType(s))
 	}
 	return result
 }

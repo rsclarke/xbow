@@ -396,16 +396,53 @@ func TestWebhookDeliveryResponseFields(t *testing.T) {
 	}
 }
 
-func TestConvertEventsHandlesNilAnyOf(t *testing.T) {
-	events := api.GetAPIV1WebhooksWebhookID_Response_Events{
-		{GetAPIV1WebhooksWebhookID_Response_Events_AnyOf: nil},
+func TestConvertWebhookEvents(t *testing.T) {
+	getAnyOf := func(e api.GetAPIV1WebhooksWebhookID_Response_Events_Item) rawUnion {
+		if e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf == nil {
+			return nil
+		}
+		return e.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf
 	}
 
-	got := convertEventsFromGet(events)
+	t.Run("nil anyOf skipped", func(t *testing.T) {
+		events := []api.GetAPIV1WebhooksWebhookID_Response_Events_Item{
+			{GetAPIV1WebhooksWebhookID_Response_Events_AnyOf: nil},
+		}
+		got := convertWebhookEvents(events, getAnyOf)
+		if len(got) != 0 {
+			t.Errorf("got %d events, want 0", len(got))
+		}
+	})
 
-	if len(got) != 0 {
-		t.Errorf("got %d events, want 0 (nil anyOf should be skipped)", len(got))
-	}
+	t.Run("converts valid events", func(t *testing.T) {
+		events := makeGetEventsResponse([]string{"asset.changed", "ping"})
+		got := convertWebhookEvents(events, getAnyOf)
+		if len(got) != 2 {
+			t.Fatalf("got %d events, want 2", len(got))
+		}
+		if got[0] != WebhookEventTypeAssetChanged {
+			t.Errorf("got[0] = %q, want %q", got[0], WebhookEventTypeAssetChanged)
+		}
+		if got[1] != WebhookEventTypePing {
+			t.Errorf("got[1] = %q, want %q", got[1], WebhookEventTypePing)
+		}
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		got := convertWebhookEvents([]api.GetAPIV1WebhooksWebhookID_Response_Events_Item{}, getAnyOf)
+		if len(got) != 0 {
+			t.Errorf("got %d events, want 0", len(got))
+		}
+	})
+
+	t.Run("invalid JSON skipped", func(t *testing.T) {
+		item := api.GetAPIV1WebhooksWebhookID_Response_Events_Item{}
+		item.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf = &api.GetAPIV1WebhooksWebhookID_Response_Events_AnyOf{}
+		got := convertWebhookEvents([]api.GetAPIV1WebhooksWebhookID_Response_Events_Item{item}, getAnyOf)
+		if len(got) != 0 {
+			t.Errorf("got %d events, want 0 (empty/invalid raw should be skipped)", len(got))
+		}
+	})
 }
 
 func TestWebhookDeliveryPayloadIsAny(t *testing.T) {
