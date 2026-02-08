@@ -2,6 +2,7 @@ package xbow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -235,6 +236,109 @@ func TestPtrValue(t *testing.T) {
 		n := 42
 		if got := ptrValue(&n); got != 42 {
 			t.Errorf("ptrValue() = %d, want 42", got)
+		}
+	})
+}
+
+type fakeOneOf struct {
+	data json.RawMessage
+}
+
+func (f *fakeOneOf) Raw() json.RawMessage { return f.data }
+
+type fakeItem struct {
+	oneOf *fakeOneOf
+}
+
+func TestConvertRecentEvents(t *testing.T) {
+	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
+	getOneOf := func(item fakeItem) rawUnion {
+		if item.oneOf == nil {
+			return nil
+		}
+		return item.oneOf
+	}
+
+	t.Run("paused event", func(t *testing.T) {
+		items := []fakeItem{
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{"name":"paused","timestamp":"2025-06-15T12:00:00Z"}`)}},
+		}
+		got := convertRecentEvents(items, getOneOf)
+		if len(got) != 1 {
+			t.Fatalf("len = %d, want 1", len(got))
+		}
+		if got[0].Name != "paused" {
+			t.Errorf("Name = %q, want 'paused'", got[0].Name)
+		}
+		if !got[0].Timestamp.Equal(now) {
+			t.Errorf("Timestamp = %v, want %v", got[0].Timestamp, now)
+		}
+		if got[0].Reason != "" {
+			t.Errorf("Reason = %q, want empty", got[0].Reason)
+		}
+	})
+
+	t.Run("auto-paused event with reason", func(t *testing.T) {
+		items := []fakeItem{
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{"name":"auto-paused","timestamp":"2025-06-15T12:00:00Z","reason":"out-of-scope"}`)}},
+		}
+		got := convertRecentEvents(items, getOneOf)
+		if len(got) != 1 {
+			t.Fatalf("len = %d, want 1", len(got))
+		}
+		if got[0].Name != "auto-paused" {
+			t.Errorf("Name = %q, want 'auto-paused'", got[0].Name)
+		}
+		if got[0].Reason != "out-of-scope" {
+			t.Errorf("Reason = %q, want 'out-of-scope'", got[0].Reason)
+		}
+	})
+
+	t.Run("nil oneOf skipped", func(t *testing.T) {
+		items := []fakeItem{
+			{oneOf: nil},
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{"name":"resumed","timestamp":"2025-06-15T12:00:00Z"}`)}},
+		}
+		got := convertRecentEvents(items, getOneOf)
+		if len(got) != 1 {
+			t.Fatalf("len = %d, want 1", len(got))
+		}
+		if got[0].Name != "resumed" {
+			t.Errorf("Name = %q, want 'resumed'", got[0].Name)
+		}
+	})
+
+	t.Run("invalid JSON skipped", func(t *testing.T) {
+		items := []fakeItem{
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{invalid`)}},
+		}
+		got := convertRecentEvents(items, getOneOf)
+		if len(got) != 0 {
+			t.Fatalf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("empty input", func(t *testing.T) {
+		got := convertRecentEvents([]fakeItem{}, getOneOf)
+		if len(got) != 0 {
+			t.Fatalf("len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("multiple events", func(t *testing.T) {
+		items := []fakeItem{
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{"name":"paused","timestamp":"2025-06-15T12:00:00Z"}`)}},
+			{oneOf: &fakeOneOf{data: json.RawMessage(`{"name":"resumed","timestamp":"2025-06-15T13:00:00Z"}`)}},
+		}
+		got := convertRecentEvents(items, getOneOf)
+		if len(got) != 2 {
+			t.Fatalf("len = %d, want 2", len(got))
+		}
+		if got[0].Name != "paused" {
+			t.Errorf("got[0].Name = %q, want 'paused'", got[0].Name)
+		}
+		if got[1].Name != "resumed" {
+			t.Errorf("got[1].Name = %q, want 'resumed'", got[1].Name)
 		}
 	})
 }

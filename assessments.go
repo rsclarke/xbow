@@ -2,7 +2,9 @@ package xbow
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
+	"time"
 
 	"github.com/rsclarke/xbow/internal/api"
 )
@@ -206,9 +208,14 @@ func assessmentFromGetResponse(r *api.GetAPIV1AssessmentsAssessmentIDResponse) *
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromGet(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents_Item) rawUnion {
+			if e.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -221,9 +228,14 @@ func assessmentFromCreateResponse(r *api.PostAPIV1AssetsAssetIDAssessmentsRespon
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromCreate(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_Item) rawUnion {
+			if e.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -236,9 +248,14 @@ func assessmentFromCancelResponse(r *api.PostAPIV1AssessmentsAssessmentIDCancelR
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromCancel(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_Item) rawUnion {
+			if e.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -251,9 +268,14 @@ func assessmentFromPauseResponse(r *api.PostAPIV1AssessmentsAssessmentIDPauseRes
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromPause(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_Item) rawUnion {
+			if e.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -266,9 +288,14 @@ func assessmentFromResumeResponse(r *api.PostAPIV1AssessmentsAssessmentIDResumeR
 		State:          AssessmentState(r.State),
 		Progress:       float64(r.Progress),
 		AttackCredits:  int64(r.AttackCredits),
-		RecentEvents:   convertRecentEventsFromResume(r.RecentEvents),
-		CreatedAt:      r.CreatedAt,
-		UpdatedAt:      r.UpdatedAt,
+		RecentEvents: convertRecentEvents(r.RecentEvents, func(e api.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_Item) rawUnion {
+			if e.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf == nil {
+				return nil
+			}
+			return e.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf
+		}),
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
 
@@ -294,185 +321,28 @@ func assessmentsPageFromResponse(r *api.GetAPIV1AssetsAssetIDAssessmentsResponse
 	}
 }
 
-func convertRecentEventsFromGet(events api.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf == nil {
-			continue
-		}
-		oneOf := e.GetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf
-
-		// Try paused event
-		if v, err := oneOf.AsGetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-
-		// Try auto-paused event (with reason)
-		if v, err := oneOf.AsGetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		// Try resumed event
-		if v, err := oneOf.AsGetAPIV1AssessmentsAssessmentID_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-	}
-	return result
+type rawUnion interface {
+	Raw() json.RawMessage
 }
 
-func convertRecentEventsFromCreate(events api.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf == nil {
-			continue
-		}
-		oneOf := e.PostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf
-
-		if v, err := oneOf.AsPostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssetsAssetIDAssessments_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-	}
-	return result
+type recentEventJSON struct {
+	Name      string    `json:"name"`
+	Timestamp time.Time `json:"timestamp"`
+	Reason    string    `json:"reason,omitempty"`
 }
 
-func convertRecentEventsFromCancel(events api.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf == nil {
+func convertRecentEvents[Item any](items []Item, getOneOf func(Item) rawUnion) []AssessmentEvent {
+	result := make([]AssessmentEvent, 0, len(items))
+	for _, item := range items {
+		oneOf := getOneOf(item)
+		if oneOf == nil {
 			continue
 		}
-		oneOf := e.PostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
+		var ev recentEventJSON
+		if err := json.Unmarshal(oneOf.Raw(), &ev); err != nil {
 			continue
 		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDCancel_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-	}
-	return result
-}
-
-func convertRecentEventsFromPause(events api.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf == nil {
-			continue
-		}
-		oneOf := e.PostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDPause_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-	}
-	return result
-}
-
-func convertRecentEventsFromResume(events api.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents) []AssessmentEvent {
-	result := make([]AssessmentEvent, 0, len(events))
-	for _, e := range events {
-		if e.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf == nil {
-			continue
-		}
-		oneOf := e.PostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf_0(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf_1(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-				Reason:    string(v.Reason),
-			})
-			continue
-		}
-
-		if v, err := oneOf.AsPostAPIV1AssessmentsAssessmentIDResume_Response_RecentEvents_OneOf_2(); err == nil {
-			result = append(result, AssessmentEvent{
-				Name:      string(v.Name),
-				Timestamp: v.Timestamp,
-			})
-			continue
-		}
+		result = append(result, AssessmentEvent(ev))
 	}
 	return result
 }
