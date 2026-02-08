@@ -126,6 +126,75 @@ func TestWrapError(t *testing.T) {
 	})
 }
 
+func TestWrapRawError(t *testing.T) {
+	t.Run("extracts structured JSON error", func(t *testing.T) {
+		body := []byte(`{"code":"ERR_NOT_FOUND","error":"Not Found","message":"Report not found"}`)
+		got := wrapRawError(404, body)
+
+		if got.StatusCode != 404 {
+			t.Errorf("StatusCode = %d, want 404", got.StatusCode)
+		}
+		if got.Code != "ERR_NOT_FOUND" {
+			t.Errorf("Code = %q, want ERR_NOT_FOUND", got.Code)
+		}
+		if got.Message != "Report not found" {
+			t.Errorf("Message = %q, want 'Report not found'", got.Message)
+		}
+		if got.ErrorType != "Not Found" {
+			t.Errorf("ErrorType = %q, want 'Not Found'", got.ErrorType)
+		}
+	})
+
+	t.Run("falls back to status defaults for non-JSON body", func(t *testing.T) {
+		body := []byte("some plain text error")
+		got := wrapRawError(404, body)
+
+		if got.StatusCode != 404 {
+			t.Errorf("StatusCode = %d, want 404", got.StatusCode)
+		}
+		if got.Code != ErrCodeNotFound {
+			t.Errorf("Code = %q, want %q", got.Code, ErrCodeNotFound)
+		}
+		if got.ErrorType != "Not Found" {
+			t.Errorf("ErrorType = %q, want 'Not Found'", got.ErrorType)
+		}
+		if got.Message != "some plain text error" {
+			t.Errorf("Message = %q, want 'some plain text error'", got.Message)
+		}
+	})
+
+	t.Run("errors.Is works for ErrNotFound", func(t *testing.T) {
+		got := wrapRawError(404, []byte("not found"))
+		if !errors.Is(got, ErrNotFound) {
+			t.Error("expected errors.Is(err, ErrNotFound) to be true")
+		}
+	})
+
+	t.Run("errors.Is works for ErrRateLimited", func(t *testing.T) {
+		got := wrapRawError(429, []byte("slow down"))
+		if !errors.Is(got, ErrRateLimited) {
+			t.Error("expected errors.Is(err, ErrRateLimited) to be true")
+		}
+	})
+
+	t.Run("500 maps to ErrInternalServer", func(t *testing.T) {
+		got := wrapRawError(500, []byte("oops"))
+		if !errors.Is(got, ErrInternalServer) {
+			t.Error("expected errors.Is(err, ErrInternalServer) to be true")
+		}
+	})
+
+	t.Run("401 maps to Unauthorized", func(t *testing.T) {
+		got := wrapRawError(401, []byte("bad token"))
+		if !errors.Is(got, ErrUnauthorized) {
+			t.Error("expected errors.Is(err, ErrUnauthorized) to be true")
+		}
+		if got.ErrorType != "Unauthorized" {
+			t.Errorf("ErrorType = %q, want 'Unauthorized'", got.ErrorType)
+		}
+	})
+}
+
 func TestIsNotFound(t *testing.T) {
 	notFoundErr := &Error{StatusCode: 404}
 	otherErr := &Error{StatusCode: 500}
