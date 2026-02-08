@@ -202,6 +202,7 @@ xbow assessment get <id> --output json
 | `--org-key` | `XBOW_ORG_KEY` | Organization API key |
 | `--integration-key` | `XBOW_INTEGRATION_KEY` | Integration API key |
 | `--output`, `-o` | - | Output format: `table` (default), `json` |
+| `--version` | - | Print CLI and API version |
 
 ## Library Usage
 

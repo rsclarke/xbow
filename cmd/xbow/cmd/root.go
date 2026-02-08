@@ -15,9 +15,10 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "xbow",
-	Short: "XBOW CLI - Interact with the XBOW API",
-	Long:  `A command-line interface for interacting with the XBOW security assessment platform.`,
+	Use:     "xbow",
+	Short:   "XBOW CLI - Interact with the XBOW API",
+	Long:    `A command-line interface for interacting with the XBOW security assessment platform.`,
+	Version: version,
 }
 
 // Execute runs the root command.
@@ -26,6 +27,7 @@ func Execute() error {
 }
 
 func init() {
+	rootCmd.SetVersionTemplate(fmt.Sprintf("xbow version %s\napi version %s\n", version, xbow.APIVersion))
 	rootCmd.PersistentFlags().StringVar(&orgKey, "org-key", "", "Organization API key (or set XBOW_ORG_KEY env var)")
 	rootCmd.PersistentFlags().StringVar(&integrationKey, "integration-key", "", "Integration API key (or set XBOW_INTEGRATION_KEY env var)")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table, json")
