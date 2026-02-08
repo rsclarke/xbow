@@ -282,22 +282,22 @@ func assetFromCreateResponse(r *api.PostAPIV1OrganizationsOrganizationIDAssetsRe
 }
 
 type rawAssetJSON struct {
-	ID                   string                          `json:"id"`
-	Name                 string                          `json:"name"`
-	OrganizationID       string                          `json:"organizationId"`
-	Lifecycle            string                          `json:"lifecycle"`
-	Sku                  string                          `json:"sku"`
-	StartURL             string                          `json:"startUrl"`
-	MaxRequestsPerSecond int                             `json:"maxRequestsPerSecond"`
-	ApprovedTimeWindows  *rawApprovedTimeWindowsJSON     `json:"approvedTimeWindows,omitempty"`
-	Credentials          []rawCredentialJSON             `json:"credentials"`
-	DNSBoundaryRules     []rawDNSBoundaryRuleJSON        `json:"dnsBoundaryRules"`
-	Headers              map[string]json.RawMessage      `json:"headers"`
-	HTTPBoundaryRules    []rawHTTPBoundaryRuleJSON       `json:"httpBoundaryRules"`
-	Checks               rawChecksJSON                   `json:"checks"`
-	ArchiveAt            time.Time                       `json:"archiveAt"`
-	CreatedAt            time.Time                       `json:"createdAt"`
-	UpdatedAt            time.Time                       `json:"updatedAt"`
+	ID                   string                      `json:"id"`
+	Name                 string                      `json:"name"`
+	OrganizationID       string                      `json:"organizationId"`
+	Lifecycle            string                      `json:"lifecycle"`
+	Sku                  string                      `json:"sku"`
+	StartURL             string                      `json:"startUrl"`
+	MaxRequestsPerSecond int                         `json:"maxRequestsPerSecond"`
+	ApprovedTimeWindows  *rawApprovedTimeWindowsJSON `json:"approvedTimeWindows,omitempty"`
+	Credentials          []rawCredentialJSON         `json:"credentials"`
+	DNSBoundaryRules     []rawDNSBoundaryRuleJSON    `json:"dnsBoundaryRules"`
+	Headers              map[string]json.RawMessage  `json:"headers"`
+	HTTPBoundaryRules    []rawHTTPBoundaryRuleJSON   `json:"httpBoundaryRules"`
+	Checks               rawChecksJSON               `json:"checks"`
+	ArchiveAt            time.Time                   `json:"archiveAt"`
+	CreatedAt            time.Time                   `json:"createdAt"`
+	UpdatedAt            time.Time                   `json:"updatedAt"`
 }
 
 type rawApprovedTimeWindowsJSON struct {
@@ -388,12 +388,7 @@ func convertApprovedTimeWindows(raw *rawApprovedTimeWindowsJSON) *ApprovedTimeWi
 	}
 	entries := make([]TimeWindowEntry, 0, len(raw.Entries))
 	for _, e := range raw.Entries {
-		entries = append(entries, TimeWindowEntry{
-			StartWeekday: e.StartWeekday,
-			StartTime:    e.StartTime,
-			EndWeekday:   e.EndWeekday,
-			EndTime:      e.EndTime,
-		})
+		entries = append(entries, TimeWindowEntry(e))
 	}
 	return &ApprovedTimeWindows{Tz: raw.Tz, Entries: entries}
 }
@@ -404,15 +399,7 @@ func convertCredentials(raw []rawCredentialJSON) []Credential {
 	}
 	result := make([]Credential, 0, len(raw))
 	for _, c := range raw {
-		result = append(result, Credential{
-			ID:               c.ID,
-			Name:             c.Name,
-			Type:             c.Type,
-			Username:         c.Username,
-			Password:         c.Password,
-			EmailAddress:     c.EmailAddress,
-			AuthenticatorURI: c.AuthenticatorURI,
-		})
+		result = append(result, Credential(c))
 	}
 	return result
 }
