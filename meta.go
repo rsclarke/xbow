@@ -2,8 +2,6 @@ package xbow
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/rsclarke/xbow/internal/api"
@@ -23,36 +21,14 @@ type WebhookSigningKey struct {
 // GetOpenAPISpec retrieves the OpenAPI specification for the current API version.
 // The response is returned as raw JSON bytes since the schema is dynamic.
 func (s *MetaService) GetOpenAPISpec(ctx context.Context) ([]byte, error) {
-	if s.client.orgKey == "" {
-		return nil, &Error{Code: "ERR_MISSING_ORG_KEY", Message: "organization key is required; provide xbow.WithOrganizationKey(...)"}
-	}
-
-	url := s.client.baseURL + "/api/v1/meta/openapi.json"
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	auth, err := s.client.orgAuthEditor()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.client.orgKey)
-	req.Header.Set("X-XBOW-API-Version", APIVersion)
-
-	resp, err := s.client.httpClient.Do(req)
+	body, err := s.client.do(ctx, http.MethodGet, "/api/v1/meta/openapi.json", auth)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &Error{
-			Code:    fmt.Sprintf("HTTP_%d", resp.StatusCode),
-			Message: string(body),
-		}
+		return nil, err
 	}
 
 	return body, nil

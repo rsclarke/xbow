@@ -3,7 +3,6 @@ package xbow
 import (
 	"context"
 	"fmt"
-	"io"
 	"iter"
 	"net/http"
 
@@ -18,36 +17,15 @@ type ReportsService struct {
 // Get downloads a report as PDF bytes by ID.
 // The returned bytes are the raw PDF file content.
 func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
-	if s.client.orgKey == "" {
-		return nil, &Error{Code: "ERR_MISSING_ORG_KEY", Message: "organization key is required; provide xbow.WithOrganizationKey(...)"}
-	}
-
-	url := fmt.Sprintf("%s/api/v1/reports/%s", s.client.baseURL, id)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	auth, err := s.client.orgAuthEditor()
 	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
+		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.client.orgKey)
-	req.Header.Set("X-XBOW-API-Version", APIVersion)
-
-	resp, err := s.client.httpClient.Do(req)
+	path := fmt.Sprintf("/api/v1/reports/%s", id)
+	body, err := s.client.do(ctx, http.MethodGet, path, auth)
 	if err != nil {
-		return nil, fmt.Errorf("executing request: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &Error{
-			Code:    fmt.Sprintf("HTTP_%d", resp.StatusCode),
-			Message: string(body),
-		}
+		return nil, err
 	}
 
 	return body, nil

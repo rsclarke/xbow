@@ -135,6 +135,43 @@ func wrapError(err error) error {
 	return err
 }
 
+// wrapRawError creates a structured *Error from a raw HTTP response status and body.
+// It mirrors the logic in wrapError but works without a runtime.ClientAPIError.
+func wrapRawError(statusCode int, body []byte) *Error {
+	apiErr := &Error{
+		StatusCode: statusCode,
+	}
+
+	var envelope apiErrorEnvelope
+	if json.Unmarshal(body, &envelope) == nil && envelope.Code != "" {
+		apiErr.Code = envelope.Code
+		apiErr.ErrorType = envelope.Error
+		apiErr.Message = envelope.Message
+	} else {
+		switch statusCode {
+		case 400:
+			apiErr.ErrorType = "Bad Request"
+			apiErr.Code = ErrCodeValidation
+		case 401:
+			apiErr.ErrorType = "Unauthorized"
+		case 403:
+			apiErr.ErrorType = "Forbidden"
+		case 404:
+			apiErr.ErrorType = "Not Found"
+			apiErr.Code = ErrCodeNotFound
+		case 429:
+			apiErr.ErrorType = "Too Many Requests"
+		default:
+			if statusCode >= 500 {
+				apiErr.ErrorType = "Internal Server Error"
+			}
+		}
+		apiErr.Message = string(body)
+	}
+
+	return apiErr
+}
+
 // parseAPIError attempts to extract structured error info from an error.
 // It handles both JSON-formatted error messages and typed error responses.
 func parseAPIError(err error) *apiErrorEnvelope {
