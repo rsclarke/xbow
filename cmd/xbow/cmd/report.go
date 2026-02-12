@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"iter"
 	"os"
 	"path/filepath"
@@ -38,19 +39,23 @@ var reportGetCmd = &cobra.Command{
 			return err
 		}
 
-		data, err := client.Reports.Get(context.Background(), args[0])
+		rc, err := client.Reports.Get(context.Background(), args[0])
 		if err != nil {
 			return err
 		}
+		defer rc.Close()
 
+		var w io.Writer = os.Stdout
 		if reportGetOutputFile != "" {
-			if err := os.WriteFile(filepath.Clean(reportGetOutputFile), data, 0o644); err != nil { //nolint:gosec // PDF output file; 0644 is intentional
-				return fmt.Errorf("writing file: %w", err)
+			f, err := os.Create(filepath.Clean(reportGetOutputFile))
+			if err != nil {
+				return fmt.Errorf("creating file: %w", err)
 			}
-			return nil
+			defer func() { _ = f.Close() }()
+			w = f
 		}
 
-		_, err = os.Stdout.Write(data)
+		_, err = io.Copy(w, rc)
 		return err
 	},
 }
