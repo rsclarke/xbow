@@ -335,6 +335,52 @@ func TestCreateKeyNilRequest(t *testing.T) {
 	}
 }
 
+func TestOrganizationsServiceEmptyID(t *testing.T) {
+	client, _ := NewClient(WithOrganizationKey("test-key"))
+	ctx := context.TODO()
+
+	tests := []struct {
+		name string
+		fn   func() error
+		msg  string
+	}{
+		{"Get", func() error { _, err := client.Organizations.Get(ctx, ""); return err }, "organization id is required"},
+		{"Update", func() error {
+			_, err := client.Organizations.Update(ctx, "", &UpdateOrganizationRequest{Name: "test"})
+			return err
+		}, "organization id is required"},
+		{"Create", func() error {
+			_, err := client.Organizations.Create(ctx, "", &CreateOrganizationRequest{Name: "test", Members: []OrganizationMember{{Email: "a@b.com", Name: "a"}}})
+			return err
+		}, "integration id is required"},
+		{"ListByIntegration", func() error { _, err := client.Organizations.ListByIntegration(ctx, "", nil); return err }, "integration id is required"},
+		{"CreateKey", func() error {
+			_, err := client.Organizations.CreateKey(ctx, "", &CreateKeyRequest{Name: "test"})
+			return err
+		}, "organization id is required"},
+		{"RevokeKey", func() error { return client.Organizations.RevokeKey(ctx, "") }, "key id is required"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.fn()
+			if err == nil {
+				t.Fatal("expected error for empty id")
+			}
+			var apiErr *Error
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("expected *Error, got %T", err)
+			}
+			if apiErr.Code != "ERR_INVALID_PARAM" {
+				t.Errorf("Code = %q, want 'ERR_INVALID_PARAM'", apiErr.Code)
+			}
+			if apiErr.Message != tt.msg {
+				t.Errorf("Message = %q, want %q", apiErr.Message, tt.msg)
+			}
+		})
+	}
+}
+
 func TestOrganizationStateConstants(t *testing.T) {
 	tests := []struct {
 		state OrganizationState

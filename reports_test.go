@@ -1,6 +1,8 @@
 package xbow
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -127,6 +129,40 @@ func TestReportListItemFields(t *testing.T) {
 	}
 	if !item.CreatedAt.Equal(now) {
 		t.Errorf("CreatedAt = %v, want %v", item.CreatedAt, now)
+	}
+}
+
+func TestReportsServiceEmptyID(t *testing.T) {
+	client, _ := NewClient(WithOrganizationKey("test-key"))
+	ctx := context.TODO()
+
+	tests := []struct {
+		name string
+		fn   func() error
+		msg  string
+	}{
+		{"Get", func() error { _, err := client.Reports.Get(ctx, ""); return err }, "report id is required"},
+		{"GetSummary", func() error { _, err := client.Reports.GetSummary(ctx, ""); return err }, "report id is required"},
+		{"ListByAsset", func() error { _, err := client.Reports.ListByAsset(ctx, "", nil); return err }, "asset id is required"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.fn()
+			if err == nil {
+				t.Fatal("expected error for empty id")
+			}
+			var apiErr *Error
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("expected *Error, got %T", err)
+			}
+			if apiErr.Code != "ERR_INVALID_PARAM" {
+				t.Errorf("Code = %q, want 'ERR_INVALID_PARAM'", apiErr.Code)
+			}
+			if apiErr.Message != tt.msg {
+				t.Errorf("Message = %q, want %q", apiErr.Message, tt.msg)
+			}
+		})
 	}
 }
 

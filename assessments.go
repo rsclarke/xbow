@@ -16,6 +16,10 @@ type AssessmentsService struct {
 
 // Get retrieves an assessment by ID.
 func (s *AssessmentsService) Get(ctx context.Context, id string) (*Assessment, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "assessment id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -46,6 +50,10 @@ type CreateAssessmentRequest struct {
 
 // Create requests a new assessment for an asset.
 func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *CreateAssessmentRequest) (*Assessment, error) {
+	if assetID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateAssessmentRequest cannot be nil"}
 	}
@@ -78,6 +86,10 @@ func (s *AssessmentsService) Create(ctx context.Context, assetID string, req *Cr
 
 // ListByAsset returns a page of assessments for an asset.
 func (s *AssessmentsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[AssessmentListItem], error) {
+	if assetID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -127,6 +139,10 @@ func (s *AssessmentsService) AllByAsset(ctx context.Context, assetID string, opt
 
 // Cancel cancels a running assessment.
 func (s *AssessmentsService) Cancel(ctx context.Context, id string) (*Assessment, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "assessment id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -151,6 +167,10 @@ func (s *AssessmentsService) Cancel(ctx context.Context, id string) (*Assessment
 
 // Pause pauses a running assessment.
 func (s *AssessmentsService) Pause(ctx context.Context, id string) (*Assessment, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "assessment id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -175,6 +195,10 @@ func (s *AssessmentsService) Pause(ctx context.Context, id string) (*Assessment,
 
 // Resume resumes a paused assessment.
 func (s *AssessmentsService) Resume(ctx context.Context, id string) (*Assessment, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "assessment id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err

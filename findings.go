@@ -14,6 +14,10 @@ type FindingsService struct {
 
 // Get retrieves a finding by ID.
 func (s *FindingsService) Get(ctx context.Context, id string) (*Finding, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "finding id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -38,6 +42,10 @@ func (s *FindingsService) Get(ctx context.Context, id string) (*Finding, error) 
 
 // ListByAsset returns a page of findings for an asset.
 func (s *FindingsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[FindingListItem], error) {
+	if assetID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -89,6 +97,10 @@ func (s *FindingsService) AllByAsset(ctx context.Context, assetID string, opts *
 // This triggers a targeted assessment to verify the vulnerability has been mitigated.
 // Returns the assessment created for the verification.
 func (s *FindingsService) VerifyFix(ctx context.Context, id string) (*Assessment, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "finding id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err

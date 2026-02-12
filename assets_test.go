@@ -745,6 +745,41 @@ func TestCreateAssetNilRequest(t *testing.T) {
 	}
 }
 
+func TestAssetsServiceEmptyID(t *testing.T) {
+	client, _ := NewClient(WithOrganizationKey("test-key"))
+	ctx := context.TODO()
+
+	tests := []struct {
+		name string
+		fn   func() error
+		msg  string
+	}{
+		{"Get", func() error { _, err := client.Assets.Get(ctx, ""); return err }, "asset id is required"},
+		{"Update", func() error { _, err := client.Assets.Update(ctx, "", &UpdateAssetRequest{}); return err }, "asset id is required"},
+		{"Create", func() error { _, err := client.Assets.Create(ctx, "", &CreateAssetRequest{Name: "test"}); return err }, "organization id is required"},
+		{"ListByOrganization", func() error { _, err := client.Assets.ListByOrganization(ctx, "", nil); return err }, "organization id is required"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.fn()
+			if err == nil {
+				t.Fatal("expected error for empty id")
+			}
+			var apiErr *Error
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("expected *Error, got %T", err)
+			}
+			if apiErr.Code != "ERR_INVALID_PARAM" {
+				t.Errorf("Code = %q, want 'ERR_INVALID_PARAM'", apiErr.Code)
+			}
+			if apiErr.Message != tt.msg {
+				t.Errorf("Message = %q, want %q", apiErr.Message, tt.msg)
+			}
+		})
+	}
+}
+
 func TestConvertCheckError(t *testing.T) {
 	t.Run("returns nil for nil input", func(t *testing.T) {
 		got := convertCheckError(nil)
