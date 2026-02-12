@@ -3,6 +3,7 @@ package xbow
 import (
 	"context"
 	"fmt"
+	"io"
 	"iter"
 	"net/http"
 
@@ -14,9 +15,22 @@ type ReportsService struct {
 	client *Client
 }
 
-// Get downloads a report as PDF bytes by ID.
-// The returned bytes are the raw PDF file content.
-func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
+// Get returns the report PDF as a streaming reader.
+// The caller is responsible for closing the returned ReadCloser.
+//
+// Example:
+//
+//	rc, err := client.Reports.Get(ctx, "report-id")
+//	if err != nil {
+//	    return err
+//	}
+//	defer rc.Close()
+//
+//	// Write to file
+//	f, _ := os.Create("report.pdf")
+//	defer f.Close()
+//	io.Copy(f, rc)
+func (s *ReportsService) Get(ctx context.Context, id string) (io.ReadCloser, error) {
 	if id == "" {
 		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "report id is required"}
 	}
@@ -27,12 +41,7 @@ func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
 	}
 
 	path := fmt.Sprintf("/api/v1/reports/%s", id)
-	body, err := s.client.do(ctx, http.MethodGet, path, auth)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
+	return s.client.doStream(ctx, http.MethodGet, path, auth)
 }
 
 // GetSummary retrieves the markdown summary of a report by ID.

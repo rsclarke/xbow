@@ -277,3 +277,36 @@ func (c *Client) do(ctx context.Context, method, path string, auth runtime.Reque
 
 	return body, nil
 }
+
+// doStream executes a raw HTTP request and returns the response body as a streaming reader.
+// The caller is responsible for closing the returned ReadCloser.
+// Non-2xx responses are returned as a structured *Error with StatusCode set.
+func (c *Client) doStream(ctx context.Context, method, path string, auth runtime.RequestEditorFn) (io.ReadCloser, error) {
+	url := c.baseURL + path
+
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+
+	if err := auth(ctx, req); err != nil {
+		return nil, fmt.Errorf("applying auth: %w", err)
+	}
+	req.Header.Set("X-XBOW-API-Version", APIVersion)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("executing request: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		defer func() { _ = resp.Body.Close() }()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading error response: %w", err)
+		}
+		return nil, wrapRawError(resp.StatusCode, body)
+	}
+
+	return resp.Body, nil
+}
