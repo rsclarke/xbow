@@ -43,6 +43,10 @@ type AssetsService struct {
 
 // Get retrieves an asset by ID.
 func (s *AssetsService) Get(ctx context.Context, id string) (*Asset, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -80,6 +84,10 @@ type UpdateAssetRequest struct {
 
 // Update updates an asset.
 func (s *AssetsService) Update(ctx context.Context, id string, req *UpdateAssetRequest) (*Asset, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "UpdateAssetRequest cannot be nil"}
 	}
@@ -125,6 +133,10 @@ type CreateAssetRequest struct {
 
 // Create creates a new asset in an organization.
 func (s *AssetsService) Create(ctx context.Context, organizationID string, req *CreateAssetRequest) (*Asset, error) {
+	if organizationID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "organization id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateAssetRequest cannot be nil"}
 	}
@@ -157,6 +169,10 @@ func (s *AssetsService) Create(ctx context.Context, organizationID string, req *
 
 // ListByOrganization returns a page of assets for an organization.
 func (s *AssetsService) ListByOrganization(ctx context.Context, organizationID string, opts *ListOptions) (*Page[AssetListItem], error) {
+	if organizationID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "organization id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err

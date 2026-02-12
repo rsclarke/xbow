@@ -17,6 +17,10 @@ type ReportsService struct {
 // Get downloads a report as PDF bytes by ID.
 // The returned bytes are the raw PDF file content.
 func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "report id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -33,6 +37,10 @@ func (s *ReportsService) Get(ctx context.Context, id string) ([]byte, error) {
 
 // GetSummary retrieves the markdown summary of a report by ID.
 func (s *ReportsService) GetSummary(ctx context.Context, id string) (*ReportSummary, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "report id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err
@@ -57,6 +65,10 @@ func (s *ReportsService) GetSummary(ctx context.Context, id string) (*ReportSumm
 
 // ListByAsset returns a page of reports for an asset.
 func (s *ReportsService) ListByAsset(ctx context.Context, assetID string, opts *ListOptions) (*Page[ReportListItem], error) {
+	if assetID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "asset id is required"}
+	}
+
 	auth, err := s.client.orgAuthEditor()
 	if err != nil {
 		return nil, err

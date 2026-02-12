@@ -250,6 +250,46 @@ type fakeItem struct {
 	oneOf *fakeOneOf
 }
 
+func TestAssessmentsServiceEmptyID(t *testing.T) {
+	client, _ := NewClient(WithOrganizationKey("test-key"))
+	ctx := context.TODO()
+
+	tests := []struct {
+		name string
+		fn   func() error
+		msg  string
+	}{
+		{"Get", func() error { _, err := client.Assessments.Get(ctx, ""); return err }, "assessment id is required"},
+		{"Create", func() error {
+			_, err := client.Assessments.Create(ctx, "", &CreateAssessmentRequest{AttackCredits: 100})
+			return err
+		}, "asset id is required"},
+		{"ListByAsset", func() error { _, err := client.Assessments.ListByAsset(ctx, "", nil); return err }, "asset id is required"},
+		{"Cancel", func() error { _, err := client.Assessments.Cancel(ctx, ""); return err }, "assessment id is required"},
+		{"Pause", func() error { _, err := client.Assessments.Pause(ctx, ""); return err }, "assessment id is required"},
+		{"Resume", func() error { _, err := client.Assessments.Resume(ctx, ""); return err }, "assessment id is required"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.fn()
+			if err == nil {
+				t.Fatal("expected error for empty id")
+			}
+			var apiErr *Error
+			if !errors.As(err, &apiErr) {
+				t.Fatalf("expected *Error, got %T", err)
+			}
+			if apiErr.Code != "ERR_INVALID_PARAM" {
+				t.Errorf("Code = %q, want 'ERR_INVALID_PARAM'", apiErr.Code)
+			}
+			if apiErr.Message != tt.msg {
+				t.Errorf("Message = %q, want %q", apiErr.Message, tt.msg)
+			}
+		})
+	}
+}
+
 func TestConvertRecentEvents(t *testing.T) {
 	now := time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC)
 	getOneOf := func(item fakeItem) rawUnion {

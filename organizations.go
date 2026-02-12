@@ -16,6 +16,10 @@ type OrganizationsService struct {
 // Get retrieves an organization by ID.
 // This endpoint accepts either an organization key or an integration key.
 func (s *OrganizationsService) Get(ctx context.Context, id string) (*Organization, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "organization id is required"}
+	}
+
 	auth, err := s.client.orgOrIntegrationAuthEditor()
 	if err != nil {
 		return nil, err
@@ -48,6 +52,10 @@ type UpdateOrganizationRequest struct {
 // Update updates an organization.
 // This endpoint requires an integration key.
 func (s *OrganizationsService) Update(ctx context.Context, id string, req *UpdateOrganizationRequest) (*Organization, error) {
+	if id == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "organization id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "UpdateOrganizationRequest cannot be nil"}
 	}
@@ -94,6 +102,10 @@ type CreateOrganizationRequest struct {
 // Create creates a new organization in an integration.
 // This endpoint requires an integration key.
 func (s *OrganizationsService) Create(ctx context.Context, integrationID string, req *CreateOrganizationRequest) (*Organization, error) {
+	if integrationID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "integration id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateOrganizationRequest cannot be nil"}
 	}
@@ -145,6 +157,10 @@ func (s *OrganizationsService) Create(ctx context.Context, integrationID string,
 // ListByIntegration returns a page of organizations for an integration.
 // This endpoint requires an integration key.
 func (s *OrganizationsService) ListByIntegration(ctx context.Context, integrationID string, opts *ListOptions) (*Page[OrganizationListItem], error) {
+	if integrationID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "integration id is required"}
+	}
+
 	auth, err := s.client.integrationAuthEditor()
 	if err != nil {
 		return nil, err
@@ -193,6 +209,10 @@ type CreateKeyRequest struct {
 // CreateKey creates a new API key for an organization.
 // This endpoint requires an integration key.
 func (s *OrganizationsService) CreateKey(ctx context.Context, organizationID string, req *CreateKeyRequest) (*OrganizationAPIKey, error) {
+	if organizationID == "" {
+		return nil, &Error{Code: "ERR_INVALID_PARAM", Message: "organization id is required"}
+	}
+
 	if req == nil {
 		return nil, &Error{Code: "ERR_INVALID_REQUEST", Message: "CreateKeyRequest cannot be nil"}
 	}
@@ -226,6 +246,10 @@ func (s *OrganizationsService) CreateKey(ctx context.Context, organizationID str
 // RevokeKey revokes an organization API key.
 // This endpoint requires an integration key.
 func (s *OrganizationsService) RevokeKey(ctx context.Context, keyID string) error {
+	if keyID == "" {
+		return &Error{Code: "ERR_INVALID_PARAM", Message: "key id is required"}
+	}
+
 	auth, err := s.client.integrationAuthEditor()
 	if err != nil {
 		return err
